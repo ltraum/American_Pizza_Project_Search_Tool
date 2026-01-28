@@ -40,6 +40,27 @@ results = search.search("customer preferences", search_type="hybrid", limit=10)
 
 Edit `.env`. Default model: `all-MiniLM-L6-v2`. For better quality set `SEMANTIC_MODEL_NAME=all-mpnet-base-v2`. Optional: `OPENAI_API_KEY` for AI query expansion.
 
+### "API unavailable" / AI query expansion not running
+
+The Web UI shows this when **OpenAI**-based query expansion fails. The app uses the **OpenAI API** (GPT-3.5-turbo) for that feature.
+
+**Fix:**
+
+1. **Create `.env`** (if missing): `cp .env.example .env`
+2. **Set a valid OpenAI key** in `.env`:
+   ```
+   OPENAI_API_KEY=sk-your-actual-key-here
+   ```
+   Get a key at [platform.openai.com/api-keys](https://platform.openai.com/api-keys). Use your own key; never commit real keys to git.
+3. **Restart the server** after changing `.env` (e.g. stop and re-run `./run_web_ui.sh`).
+
+**Check the terminal** where the server runs. You’ll see one of:
+
+- `No OpenAI API key found. Set OPENAI_API_KEY for AI expansion.` → key missing or not loaded
+- `OpenAI expansion failed: ...` → key invalid, rate limit, timeout, or network issue
+
+Ensure `openai` and `python-dotenv` are installed (`pip install -r requirements.txt`).
+
 ## Project layout
 
 - `search_tool.py` — main CLI/API

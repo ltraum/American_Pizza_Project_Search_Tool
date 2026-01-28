@@ -10,6 +10,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def _ascii_safe(s: str) -> str:
+    """Replace common Unicode quotes/dashes with ASCII to avoid 'ascii codec' errors (e.g. paste from Word)."""
+    if not s:
+        return s
+    for a, b in (
+        ("\u201c", '"'), ("\u201d", '"'), ("\u2018", "'"), ("\u2019", "'"),
+        ("\u2013", "-"), ("\u2014", "-"),
+    ):
+        s = s.replace(a, b)
+    return s
+
+
 class QueryExpander:
     """
     Expands search queries to improve semantic search results using AI.
@@ -88,10 +100,13 @@ class QueryExpander:
         
         # LLM-only expansion: when off or fails, return single query only (no rule-based fallbacks)
         if not (self.use_llm and self.llm_api_key):
+            if self.use_llm and not self.llm_api_key:
+                logger.warning("OpenAI API key missing. Set OPENAI_API_KEY in .env for AI query expansion.")
             return ([query.strip()], True)
         
         terms = self._llm_based_expansion(query, max_expansions=max_phrases)
         if not terms or (len(terms) == 1 and terms[0].lower().strip() == qnorm):
+            logger.warning("OpenAI returned no expansions (or only the original query). Check key, quota, and logs above.")
             return ([query.strip()], True)
         
         # Dedupe and cap phrases
@@ -131,36 +146,38 @@ class QueryExpander:
         """Expand query using OpenAI API (lightweight GPT-3.5-turbo)"""
         try:
             import openai
-            api_key = self.llm_api_key
+            api_key = (_ascii_safe(self.llm_api_key or "") or "").strip()
             if not api_key:
                 return []
-            
+            query_safe = _ascii_safe(query).strip() or query.strip()
+
             client = openai.OpenAI(api_key=api_key)
-            
+
             # Prompt: preserve anchor terms/phrases so expansions stay focused (e.g. "budget" in "budget limitations", "mushroom" in topping queries)
-            prompt = f"""You expand search queries for a qualitative corpus (e.g. interviews/surveys). Your job is to generate related search phrases that stay tightly focused on the same main concept(s) as the query and use wording respondents might actually say.
+            prompt_raw = f"""You expand search queries for a qualitative corpus (e.g. interviews/surveys). Your job is to generate related search phrases that stay tightly focused on the same main concept(s) as the query and use wording respondents might actually say.
 
-Given the user query: "{query}"
+Given the user query: "{query_safe}"
 
-STEP 1 – Identify focus terms:
-- Find the 1–3 key noun or noun-phrase anchors that carry the meaning.
-  Examples: "budget limitations" → anchor phrase "budget limitations" (do NOT treat "limitations" alone as the anchor). "mushroom" → anchor term "mushroom". "who likes pepperoni?" → anchor term "pepperoni".
+STEP 1 - Identify focus terms:
+- Find the 1-3 key noun or noun-phrase anchors that carry the meaning.
+  Examples: "budget limitations" -> anchor phrase "budget limitations" (do NOT treat "limitations" alone as the anchor). "mushroom" -> anchor term "mushroom". "who likes pepperoni?" -> anchor term "pepperoni".
 - Ignore generic words like "who", "what", "why", "when", "how", "limitations", "issues", "things" unless they are clearly the core concept.
 
-STEP 2 – Generate expansions:
+STEP 2 - Generate expansions:
 - At least 70% of the expansions MUST literally include the anchor term or phrase.
   - For "budget limitations": use variants like "budget limitations", "limited budget", "tight budget", "budget constraints", "budget issues". Avoid standalone "limitations" with no mention of budget.
-  - For "mushroom": use variants like "mushrooms", "extra mushrooms"—not generic "toppings" or "favorite toppings" that drop the word "mushroom".
-  - For "who likes pepperoni?": focus on pepperoni—e.g. "pepperoni lovers", "people who like pepperoni", "favorite pepperoni topping", "pepperoni preference".
+  - For "mushroom": use variants like "mushrooms", "extra mushrooms" - not generic "toppings" or "favorite toppings" that drop the word "mushroom".
+  - For "who likes pepperoni?": focus on pepperoni - e.g. "pepperoni lovers", "people who like pepperoni", "favorite pepperoni topping", "pepperoni preference".
 - Only rarely include a broader category that omits the anchor (e.g. "pizza toppings" from "pepperoni"), and only if obviously useful.
-- Prefer short, natural phrases (2–6 words) that someone might say in an interview.
+- Prefer short, natural phrases (2-6 words) that someone might say in an interview.
 
-STEP 3 – Format:
+STEP 3 - Format:
 - Do NOT rephrase the whole query as a long sentence. Do NOT explain. Return ONLY a comma-separated list of phrases, most relevant first.
 
 Terms:"""
-            
-            system_content = (
+            prompt = _ascii_safe(prompt_raw)
+
+            system_content = _ascii_safe(
                 "You expand search queries for retrieval. Identify the key anchor term or phrase in each query and ensure most of your expansion phrases literally include that anchor. Do not split compound concepts (e.g. keep 'budget' tied to 'budget limitations'); do not replace specific terms (e.g. 'mushroom') with generic ones (e.g. 'toppings'). Output only a comma-separated list of short phrases."
             )
             response = client.chat.completions.create(
@@ -200,7 +217,7 @@ Terms:"""
             logger.warning("OpenAI library not installed. Install with: pip install openai")
             return [query]  # Return original query only
         except Exception as e:
-            logger.warning(f"OpenAI expansion failed: {e}")
+            logger.warning("OpenAI API error (invalid key, timeout, or network): %s", e)
             return [query]  # Return original query only
     
 # Default instance for easy import

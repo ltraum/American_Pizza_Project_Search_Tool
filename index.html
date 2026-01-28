@@ -793,9 +793,8 @@
       if (bannerEl) {
         if (expansionFallback) {
           bannerEl.style.display = 'block';
-          bannerEl.innerHTML = '<strong>AI query expansion didn’t run</strong> (e.g. API unavailable or returned no expansions). ' +
-            'Search used built-in rule-based expansion instead, so you still get related terms like "family" → children, kids, relatives, etc. ' +
-            'Results are unchanged; only the expansion source differs.';
+          bannerEl.innerHTML = '<strong>AI query expansion didn’t run</strong> (e.g. OpenAI API unavailable or returned no expansions). ' +
+            'Search used your query as-is. Set <code>OPENAI_API_KEY</code> in <code>.env</code> and restart the server to enable AI expansion.';
         } else {
           bannerEl.style.display = 'none';
           bannerEl.innerHTML = '';
