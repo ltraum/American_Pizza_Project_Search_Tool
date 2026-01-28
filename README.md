@@ -5,8 +5,8 @@ Search tool for pizza interview/survey data: full-text (Whoosh), semantic (sente
 ## Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/American_Pizza_Project_Search.git
-cd American_Pizza_Project_Search
+git clone https://github.com/ltraum/American_Pizza_Project_Search_Tool.git
+cd American_Pizza_Project_Search_Tool
 
 python3 -m venv venv
 source venv/bin/activate
@@ -44,10 +44,7 @@ Edit `.env`. Default model: `all-MiniLM-L6-v2`. For better quality set `SEMANTIC
 
 - `search_tool.py` — main CLI/API
 - `api_server.py` + `index.html` — Web UI
-- `data_loader.py`, `fulltext_search.py`, `semantic_search.py`, `query_expander.py`, `config.py`
-- `pizza_interviews copy.xlsx` — put your data here
-- `MAC_SETUP.md`, `docs/DEPLOYMENT_GUIDE.md` — extra docs
+- `data_loader.py`, `fulltext_search.py`, `semantic_search.py`, `query_expander.py`, `config.py` 
+- `pizza_interviews copy.xlsx` — American Pizza Project interview collection
 
-## License
 
-MIT. See [LICENSE](LICENSE).
