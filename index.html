@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>American Pizza Project Explorer</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root {
+      --navy: #1E3A5F;
+      --dark-red: #8B2635;
+      --red-accent: #A52A2A;
+      --gray-dark: #4A4A4A;
+      --gray-medium: #6B6B6B;
+      --gray-light: #8E8E8E;
+      --gray-bg: #F5F5F5;
+      --gray-card: #FFFFFF;
+      --border: #E0E0E0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      background: var(--gray-bg);
+      color: var(--gray-dark);
+    }
+    .main-header {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--navy);
+      text-align: center;
+      margin: 1.5rem 0;
+      letter-spacing: -0.02em;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 0;
+      min-height: 100vh;
+    }
+    .sidebar {
+      background: var(--gray-card);
+      border-right: 1px solid var(--border);
+      padding: 1.25rem;
+      overflow-y: auto;
+    }
+    .sidebar h2 { 
+      font-size: 1.1rem; 
+      margin: 0 0 1rem 0; 
+      color: var(--navy);
+      font-weight: 600;
+    }
+    .sidebar h3 { 
+      font-size: 0.9rem; 
+      margin: 1.25rem 0 0.5rem 0; 
+      color: var(--gray-medium);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .sidebar label { 
+      display: block; 
+      font-size: 0.85rem; 
+      margin-top: 0.75rem;
+      color: var(--gray-dark);
+      font-weight: 500;
+    }
+    .sidebar select, .sidebar input[type="number"], .sidebar input[type="text"] {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.3rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      background: var(--gray-card);
+      color: var(--gray-dark);
+    }
+    .sidebar select:focus, .sidebar input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.1);
+    }
+    .sidebar button {
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.6rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+    .btn-primary { 
+      background: var(--navy); 
+      color: #fff; 
+    }
+    .btn-primary:hover { 
+      background: #2A4A6F;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .btn-secondary { 
+      background: var(--gray-bg); 
+      color: var(--gray-dark);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: #E8E8E8;
+      border-color: var(--gray-medium);
+    }
+    .btn-danger { 
+      background: #FFF5F5; 
+      color: var(--dark-red);
+      border: 1px solid #FFE0E0;
+    }
+    .btn-danger:hover {
+      background: #FFE8E8;
+      border-color: var(--dark-red);
+    }
+    .content { padding: 2rem; max-width: 1000px; }
+    .info-dropdowns {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .info-dropdowns details {
+      width: 100%;
+      background: var(--gray-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .info-dropdowns summary {
+      padding: 0.6rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--navy);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .info-dropdowns summary::-webkit-details-marker { display: none; }
+    .info-dropdowns summary::before {
+      content: '▸';
+      font-size: 0.75rem;
+      transition: transform 0.2s ease;
+    }
+    .info-dropdowns details[open] summary::before { transform: rotate(90deg); }
+    .info-dropdowns .info-body {
+      padding: 0.9rem 1rem;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--gray-dark);
+      border-top: 1px solid var(--border);
+    }
+    .search-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+    .search-row input[type="text"] {
+      flex: 1;
+      min-width: 250px;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 1rem;
+      background: var(--gray-card);
+      color: var(--gray-dark);
+    }
+    .search-row input[type="text"]:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+    }
+    .search-row button { 
+      width: auto; 
+      padding: 0.75rem 1.5rem;
+      font-size: 0.95rem;
+    }
+    .result-card {
+      background: var(--gray-card);
+      border-left: 3px solid var(--navy);
+      border-radius: 4px;
+      padding: 1.25rem;
+      margin: 1rem 0;
+      line-height: 1.7;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .result-card .quote { 
+      font-size: 1rem; 
+      color: var(--gray-dark);
+      margin-bottom: 0.75rem;
+    }
+    .result-card .quote .quote-context {
+      color: var(--gray-medium);
+    }
+    .result-card .quote .search-hit { 
+      background: rgba(139, 38, 53, 0.15); 
+      padding: 0 3px; 
+      border-radius: 2px;
+      font-weight: 500;
+    }
+    .result-card .meta { 
+      font-size: 0.85rem; 
+      color: var(--gray-medium); 
+      margin-top: 0.75rem;
+    }
+    .result-card .result-actions { margin-top: 0.75rem; }
+    .result-card .btn-view-details { font-size: 0.85rem; padding: 0.5rem 1rem; }
+    .score-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      margin-right: 0.5rem;
+      letter-spacing: 0.3px;
+    }
+    .score-high { background: var(--navy); color: #fff; }
+    .score-medium { background: var(--dark-red); color: #fff; }
+    .score-low { background: var(--gray-medium); color: #fff; }
+    .filter-block {
+      background: var(--gray-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+    .filter-block label { 
+      font-size: 0.8rem; 
+      color: var(--gray-dark);
+      font-weight: 500;
+    }
+    .filter-actions { display: flex; gap: 0.25rem; margin-top: 0.25rem; }
+    .filter-actions button { width: auto; margin: 0; }
+    #chart-container { max-width: 700px; height: 380px; margin: 1rem 0; }
+    .loading { color: var(--gray-medium); }
+    .error { color: var(--dark-red); }
+    .expansion-fallback-banner {
+      background: #FFF5F5;
+      border: 1px solid #FFE0E0;
+      border-left: 3px solid var(--dark-red);
+      border-radius: 4px;
+      padding: 0.9rem 1.1rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.9rem;
+      color: var(--gray-dark);
+    }
+    .summary { 
+      margin: 1.25rem 0; 
+      padding: 1rem; 
+      background: var(--gray-card); 
+      border-radius: 4px; 
+      border: 1px solid var(--border);
+      color: var(--gray-dark);
+      font-size: 0.95rem;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal.open { display: flex; }
+    .modal-inner {
+      background: var(--gray-card);
+      border-radius: 6px;
+      padding: 2rem;
+      max-width: 90vw;
+      max-height: 90vh;
+      overflow: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .modal-inner h2 {
+      color: var(--navy);
+      margin-top: 0;
+      font-weight: 600;
+    }
+    .modal-inner table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+    .modal-inner th, .modal-inner td { 
+      padding: 0.6rem; 
+      border: 1px solid var(--border); 
+      text-align: left;
+    }
+    .modal-inner th {
+      background: var(--gray-bg);
+      color: var(--navy);
+      font-weight: 600;
+    }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--gray-dark);
+    }
+    .toggle-row input[type="checkbox"] { margin: 0; cursor: pointer; }
+    .interviewee-group {
+      background: var(--gray-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .interviewee-group-header {
+      padding: 0.75rem 1rem;
+      background: var(--gray-bg);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--navy);
+      font-weight: 600;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem 1rem;
+    }
+    .interviewee-group-header .interviewee-transcript-btn {
+      margin-left: auto;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.75rem;
+    }
+    .interviewee-quotes {
+      max-height: 420px;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="main-header">Search the American Pizza Project</h1>
+  <div class="layout">
+    <aside class="sidebar">
+      <h2>Settings</h2>
+      <label class="toggle-row">
+        <input type="checkbox" id="group-by-interviewee" checked />
+        <span>Group results by interviewee</span>
+      </label>
+      <label>Search type</label>
+      <select id="search-type">
+        <option value="hybrid">Hybrid</option>
+        <option value="fulltext">Full-text</option>
+        <option value="semantic">Semantic</option>
+      </select>
+      <div id="threshold-wrap" style="margin-top:0.5rem;">
+        <label>Minimum similarity score threshold</label>
+        <input type="number" id="threshold" min="0" max="1" step="0.1" value="0.25" />
+      </div>
+      <hr style="margin:1.25rem 0; border:0; border-top:1px solid var(--border);" />
+      <h3>Metadata Filters</h3>
+      <div id="filters-container"></div>
+      <button type="button" class="btn-secondary" id="add-filter">+ Add Filter</button>
+      <button type="button" class="btn-primary" id="update-search" style="margin-top:0.75rem;">Update Search</button>
+      <hr style="margin:1.25rem 0; border:0; border-top:1px solid var(--border);" />
+      <p style="font-size:0.75rem; color:var(--gray-medium); line-height:1.5;">
+        Hybrid combines full-text and semantic search. Full-text uses keywords; semantic uses meaning.
+      </p>
+    </aside>
+    <main class="content">
+      <div class="info-dropdowns">
+        <details>
+          <summary>About the American Pizza Project</summary>
+          <div class="info-body">
+            <p>The American Pizza Project is aimed at capturing the diverse viewpoints on pizza consumption across the United States. We conducted a series of pseudo–nationally representative interviews with participants from various backgrounds, focusing on their personal experiences and preferences related to pizza.</p>
+            <p>Each participant was asked to provide detailed responses (around 200 words) to the following prompts about their personal pizza preferences and experiences:</p>
+            <ol>
+              <li>Describe a turning point in your life when your taste or appreciation for pizza changed. Share the story or explain why there hasn't been a change.</li>
+              <li>Detail your ideal slice of pizza, including toppings, texture, sauce–cheese ratios, and your preferred regional style.</li>
+              <li>Explain when and how you typically eat pizza in your life — on the go, with others, etc.</li>
+              <li>Discuss the importance of pizza boxes and utensils to your pizza–eating experience.</li>
+              <li>Share any experiences of being unable to eat pizza when you wanted to due to dietary reasons, cost, lack of availability, or other barriers.</li>
+            </ol>
+            <p>The following metadata is also captured for each participant——age, income, place of residence (region, state, city), frequency of pizza consumption, food restrictions——and can be used to filter results.</p>
+          </div>
+        </details>
+        <details>
+          <summary>How this search works</summary>
+          <div class="info-body">
+            <p><strong>Semantic search:</strong> Interview text is split into sentence-sized chunks (1 sentence per chunk by default). Each chunk is turned into a vector (embedding) using a sentence-transformer model (currently: all-MiniLM-L6-v2) and stored in a local index. Your query is embedded the same way, and the tool returns the chunks whose vectors are closest in meaning to the query.</p>
+            <p><strong>Full-text search:</strong> Finds passages by keyword matching. Results are based on whether your search terms (or close variants) appear in the text, so it’s best for exact words like “pepperoni”, “box”, or “utensils”.</p>
+            <p><strong>Hybrid search:</strong> Combines semantic matching (meaning) with full-text matching (keywords). It identifies semantic results first, then adds additional keyword hits that weren’t already returned by semantic search.</p>
+          </div>
+        </details>
+      </div>
+      <div class="search-row">
+        <input type="text" id="query" placeholder="Please enter a 1-3 word term (e.g. family meal, pepperoni, budget)" />
+        <button type="button" class="btn-primary" id="search-btn">Search</button>
+        <button type="button" class="btn-secondary" id="clear-btn">Clear</button>
+      </div>
+      <div id="messages"></div>
+      <div id="results-area" style="display:none;">
+        <div id="expansion-fallback-banner" class="expansion-fallback-banner" style="display:none;" role="status"></div>
+        <div class="summary" id="summary"></div>
+        <details id="distribution-details">
+          <summary style="cursor: pointer; color: var(--navy); font-weight: 500; padding: 0.5rem 0;">Distribution & Summary</summary>
+          <div id="chart-container"><canvas id="dist-chart"></canvas></div>
+          <div id="metrics"></div>
+        </details>
+        <div id="results-list"></div>
+        <div style="margin-top:1rem;">
+          <button type="button" class="btn-secondary" id="download-json">Download Results (JSON)</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal" id="data-info-modal">
+    <div class="modal-inner">
+      <h2>Data Information</h2>
+      <div id="data-info-body"></div>
+      <button type="button" class="btn-secondary" id="close-modal" style="margin-top:1rem;">Close</button>
+    </div>
+  </div>
+
+  <div class="modal" id="full-details-modal">
+    <div class="modal-inner" style="max-width: 800px;">
+      <h2>Full Details</h2>
+      <div id="full-details-body" style="max-height: 75vh; overflow: auto;">
+        <div id="full-details-metadata" style="margin-bottom: 2rem;"></div>
+        <div id="full-details-interview" style="margin-top: 1.5rem;">
+          <h3 style="color: var(--navy); font-size: 1.1rem; margin-bottom: 0.75rem; font-weight: 600;">Full Interview</h3>
+          <div id="full-interview-body" style="white-space: pre-wrap; line-height: 1.7; padding: 1rem; background: var(--gray-bg); border-radius: 4px; border: 1px solid var(--border);"></div>
+        </div>
+      </div>
+      <button type="button" class="btn-secondary" id="close-full-details" style="margin-top:1.5rem;">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const API = window.location.origin;
+    let lastPayload = null;
+    let distChart = null;
+
+    function showMsg(text, type = '') {
+      const el = document.getElementById('messages');
+      el.textContent = text;
+      el.className = type === 'error' ? 'error' : type === 'loading' ? 'loading' : '';
+    }
+
+    function scoreClass(s) {
+      if (s >= 0.7) return 'score-high';
+      if (s >= 0.4) return 'score-medium';
+      return 'score-low';
+    }
+
+    function getParticipantId(meta, fallback) {
+      if (!meta) return fallback;
+      for (const k of ['participant_id','participant','id','participant_number']) {
+        if (meta[k] != null && meta[k] !== '') return meta[k];
+      }
+      return fallback;
+    }
+
+    function displayFilteredMeta(meta) {
+      if (!meta) return {};
+      const wanted = {
+        participant_id: ['participant_id','participant','participant_number','id'],
+        age: ['age'],
+        city_of_residence: ['city_of_residence','city','residence','location'],
+        state_of_residence: ['state_of_residence','state'],
+        region_of_residence: ['region_of_residence','region','region_of_residence'],
+        income: ['income'],
+        pizza_consumption: ['pizza_consumption','consumption','pizza_frequency']
+      };
+      const out = {};
+      for (const [disp, keys] of Object.entries(wanted)) {
+        for (const key of keys) {
+          const mk = Object.keys(meta).find(k => k.toLowerCase() === key.toLowerCase());
+          if (mk != null && meta[mk] != null && meta[mk] !== '') {
+            out[disp] = meta[mk];
+            break;
+          }
+        }
+      }
+      return out;
+    }
+
+    async function loadMetadataFields() {
+      const r = await fetch(API + '/api/metadata/fields');
+      if (!r.ok) return [];
+      const j = await r.json();
+      const allFields = j.fields || [];
+      
+      // Define field categories and order
+      const categoricalFields = ['region_of_residence', 'state_of_residence', 'food_restrictions', 'pizza_consumption'];
+      const continuousFields = ['income', 'age'];
+      
+      // Filter out participant_id and order fields
+      const filtered = allFields.filter(f => {
+        const fieldLower = f.toLowerCase().replace(/_/g, '').replace(/\s+/g, '');
+        return !fieldLower.includes('participantid') && 
+               !fieldLower.includes('participant') && 
+               fieldLower !== 'id';
+      });
+      
+      // Sort: categorical first, then continuous, then others
+      const ordered = [];
+      const remaining = [];
+      
+      for (const field of filtered) {
+        const fieldLower = field.toLowerCase().replace(/_/g, '').replace(/\s+/g, '');
+        let found = false;
+        
+        // Check categorical fields (case-insensitive, ignore underscores/spaces)
+        for (const catField of categoricalFields) {
+          const catFieldLower = catField.toLowerCase().replace(/_/g, '');
+          if (fieldLower.includes(catFieldLower) || fieldLower === catFieldLower) {
+            ordered.push(field);
+            found = true;
+            break;
+          }
+        }
+        
+        if (!found) {
+          // Check continuous fields
+          for (const contField of continuousFields) {
+            const contFieldLower = contField.toLowerCase();
+            if (fieldLower.includes(contFieldLower) || fieldLower === contFieldLower) {
+              ordered.push(field);
+              found = true;
+              break;
+            }
+          }
+        }
+        
+        if (!found) {
+          remaining.push(field);
+        }
+      }
+      
+      // Return ordered: categorical, continuous, then others
+      return [...ordered, ...remaining];
+    }
+    
+    function getFieldType(fieldName) {
+      const fieldLower = fieldName.toLowerCase().replace(/_/g, '').replace(/\s+/g, '');
+      const continuousFields = ['income', 'age'];
+      const categoricalFields = ['regionofresidence', 'stateofresidence', 'foodrestrictions', 'pizzaconsumption'];
+      
+      for (const cf of continuousFields) {
+        if (fieldLower.includes(cf) || fieldLower === cf) {
+          return 'continuous';
+        }
+      }
+      
+      for (const catf of categoricalFields) {
+        if (fieldLower.includes(catf) || fieldLower === catf) {
+          return 'categorical';
+        }
+      }
+      
+      // Default: assume categorical for unknown fields
+      return 'categorical';
+    }
+
+    async function loadMetadataValues(field) {
+      const r = await fetch(API + '/api/metadata/values?field=' + encodeURIComponent(field) + '&limit=100');
+      if (!r.ok) return [];
+      const j = await r.json();
+      return j.values || [];
+    }
+
+    let filterId = 0;
+    let fieldsCache = null;
+    const filterBlocks = [];
+
+    async function ensureFields() {
+      if (fieldsCache) return fieldsCache;
+      fieldsCache = await loadMetadataFields();
+      return fieldsCache;
+    }
+
+    function addFilterBlock() {
+      const id = 'f_' + (filterId++);
+      const wrap = document.createElement('div');
+      wrap.className = 'filter-block';
+      wrap.dataset.filterId = id;
+          wrap.innerHTML = `
+        <label>Field</label>
+        <select class="filter-field" data-id="${id}"></select>
+        <label style="margin-top:0.4rem">Operator</label>
+        <select class="filter-op" data-id="${id}">
+          <option value="includes">Includes</option>
+          <option value="not_includes">Not Includes</option>
+        </select>
+        <div class="filter-value-wrap" data-id="${id}"></div>
+        <div class="filter-actions">
+          <button type="button" class="btn-danger" data-remove="${id}">Remove</button>
+        </div>
+      `;
+      const container = document.getElementById('filters-container');
+      container.appendChild(wrap);
+      const block = { id, wrap, field: null, op: 'includes', value: null };
+      filterBlocks.push(block);
+
+      (async () => {
+        const fields = await ensureFields();
+        const sel = wrap.querySelector('.filter-field');
+        sel.innerHTML = fields.map(f => '<option value="' + f + '">' + f + '</option>').join('');
+        sel.value = fields[0] || '';
+        block.field = sel.value;
+        sel.addEventListener('change', () => { 
+          block.field = sel.value; 
+          refreshValueUI(block); 
+        });
+        
+        // Add operator change handler once
+        const opSelect = wrap.querySelector('.filter-op');
+        opSelect.addEventListener('change', e => { 
+          block.op = e.target.value; 
+          refreshValueUI(block); 
+        });
+        
+        wrap.querySelector('[data-remove]').addEventListener('click', () => {
+          wrap.remove();
+          filterBlocks.splice(filterBlocks.indexOf(block), 1);
+        });
+        refreshValueUI(block);
+      })();
+    }
+
+    function refreshValueUI(block) {
+      const wrap = block.wrap.querySelector('.filter-value-wrap');
+      wrap.innerHTML = '';
+      const field = block.field;
+      const fieldType = getFieldType(field);
+      
+      // Update operator options based on field type
+      const opSelect = block.wrap.querySelector('.filter-op');
+      const currentOp = block.op;
+      
+      if (fieldType === 'continuous') {
+        // Continuous fields: only greater_than, less_than
+        opSelect.innerHTML = `
+          <option value="greater_than">Greater Than</option>
+          <option value="less_than">Less Than</option>
+        `;
+        // Reset to greater_than if current op is not valid for continuous
+        if (!['greater_than', 'less_than'].includes(currentOp)) {
+          block.op = 'greater_than';
+          opSelect.value = 'greater_than';
+        } else {
+          opSelect.value = currentOp;
+        }
+      } else {
+        // Categorical fields: includes, not_includes
+        opSelect.innerHTML = `
+          <option value="includes">Includes</option>
+          <option value="not_includes">Not Includes</option>
+        `;
+        // Reset to includes if current op is not valid for categorical
+        if (!['includes', 'not_includes'].includes(currentOp)) {
+          block.op = 'includes';
+          opSelect.value = 'includes';
+        } else {
+          opSelect.value = currentOp;
+        }
+      }
+      
+      if (['includes','not_includes'].includes(block.op)) {
+        loadMetadataValues(field).then(values => {
+          const multi = document.createElement('select');
+          multi.multiple = true;
+          multi.style.width = '100%';
+          multi.style.minHeight = '60px';
+          values.forEach(v => {
+            const o = document.createElement('option');
+            o.value = v;
+            o.textContent = v;
+            multi.appendChild(o);
+          });
+          if (Array.isArray(block.value)) {
+            [...multi.options].forEach(o => { o.selected = block.value.includes(o.value); });
+          }
+          multi.addEventListener('change', () => { block.value = [...multi.selectedOptions].map(o => o.value); });
+          wrap.appendChild(multi);
+        });
+      } else if (block.op === 'between') {
+        const [lo, hi] = Array.isArray(block.value) ? block.value : [0, 100];
+        const d = document.createElement('div');
+        d.style.display = 'flex';
+        d.style.gap = '0.5rem';
+        d.innerHTML = '<input type="number" placeholder="Min" value="' + lo + '"><input type="number" placeholder="Max" value="' + hi + '">';
+        const [inLo, inHi] = d.querySelectorAll('input');
+        const update = () => { block.value = [parseFloat(inLo.value) || 0, parseFloat(inHi.value) || 100]; };
+        inLo.addEventListener('input', update);
+        inHi.addEventListener('input', update);
+        wrap.appendChild(d);
+      } else {
+        const inp = document.createElement('input');
+        inp.type = ['greater_than','less_than'].includes(block.op) ? 'number' : 'text';
+        inp.placeholder = 'Value';
+        inp.value = block.value != null ? block.value : '';
+        inp.addEventListener('input', () => { block.value = inp.value; });
+        wrap.appendChild(inp);
+      }
+    }
+
+    function buildMetadataFilters() {
+      const out = {};
+      for (const b of filterBlocks) {
+        const v = b.value;
+        const has = Array.isArray(v) ? v.length > 0 : v != null && v !== '';
+        if (!b.field || !b.op || !has) continue;
+        out[b.field] = { operator: b.op, value: v };
+      }
+      return Object.keys(out).length ? out : null;
+    }
+
+    document.getElementById('add-filter').addEventListener('click', () => addFilterBlock());
+
+    function buildSearchPayload() {
+      const searchType = document.getElementById('search-type').value;
+      const threshold = document.getElementById('threshold').value;
+      return {
+        query: document.getElementById('query').value.trim(),
+        search_type: searchType,
+        semantic_threshold: (searchType === 'semantic' || searchType === 'hybrid') && parseFloat(threshold) > 0 ? parseFloat(threshold) : null,
+        metadata_filters: buildMetadataFilters()
+      };
+    }
+
+    document.getElementById('search-type').addEventListener('change', () => {
+      const wrap = document.getElementById('threshold-wrap');
+      wrap.style.display = document.getElementById('search-type').value === 'fulltext' ? 'none' : 'block';
+    });
+    document.getElementById('search-type').dispatchEvent(new Event('change'));
+
+    async function runSearch() {
+      const payload = buildSearchPayload();
+      if (!payload.query) {
+        showMsg('Enter a search query.', 'error');
+        return;
+      }
+      showMsg('Searching…', 'loading');
+      try {
+        const r = await fetch(API + '/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!r.ok) {
+          const t = await r.text();
+          throw new Error(t || r.statusText);
+        }
+        const data = await r.json();
+        lastPayload = { payload, data };
+        renderResults(data);
+        showMsg('');
+      } catch (e) {
+        showMsg('Search failed: ' + (e.message || String(e)), 'error');
+      }
+    }
+
+    document.getElementById('search-btn').addEventListener('click', runSearch);
+    document.getElementById('update-search').addEventListener('click', runSearch);
+    document.getElementById('group-by-interviewee').addEventListener('change', () => {
+      if (lastPayload && lastPayload.data) renderResults(lastPayload.data);
+    });
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      document.getElementById('query').value = '';
+      lastPayload = null;
+      document.getElementById('results-area').style.display = 'none';
+      showMsg('');
+    });
+
+    function renderResults(response) {
+      const area = document.getElementById('results-area');
+      area.style.display = 'block';
+      const resultsObj = response.results || {};
+      const res = resultsObj.results || [];
+      const dist = response.distribution;
+      const expansionFallback = resultsObj.expansion_fallback_used === true;
+      const bannerEl = document.getElementById('expansion-fallback-banner');
+      if (bannerEl) {
+        if (expansionFallback) {
+          bannerEl.style.display = 'block';
+          bannerEl.innerHTML = '<strong>AI query expansion didn’t run</strong> (e.g. API unavailable or returned no expansions). ' +
+            'Search used built-in rule-based expansion instead, so you still get related terms like "family" → children, kids, relatives, etc. ' +
+            'Results are unchanged; only the expansion source differs.';
+        } else {
+          bannerEl.style.display = 'none';
+          bannerEl.innerHTML = '';
+        }
+      }
+      const query = lastPayload && lastPayload.payload ? lastPayload.payload.query : '';
+
+      const filtered = res.filter(r => (r.normalized_score || 0) > 0);
+      window._lastFilteredResults = filtered;
+      const participants = new Set(filtered.map(r => getParticipantId(r.metadata, r.id)));
+      const summary = document.getElementById('summary');
+      summary.innerHTML = 'Found ' + filtered.length + ' results' +
+        (filtered.length < res.length ? ' (filtered from ' + res.length + ' total)' : '') + '. ';
+      summary.innerHTML += 'Unique participants: ' + participants.size + '.';
+
+      const listEl = document.getElementById('results-list');
+      const groupByInterviewee = document.getElementById('group-by-interviewee').checked;
+
+      function buildContextQuote(r) {
+        // Prefer full_text when available; fall back to text.
+        const full = (r.full_text || r.text || '').trim();
+        const snippet = (r.text || '').trim();
+        if (!full || !snippet) return null;
+
+        const sentences = full.match(/[^.!?]+[.!?]*\s*/g) || [full];
+
+        // Use the first sentence from the snippet as the anchor; this
+        // avoids failures when the snippet spans multiple sentences.
+        const snippetSentences = snippet.match(/[^.!?]+[.!?]*\s*/g) || [snippet];
+        const anchor = snippetSentences[0].trim();
+        if (!anchor) return null;
+
+        const mainIdx = sentences.findIndex(s => s.indexOf(anchor) !== -1);
+        if (mainIdx === -1) return null;
+
+        const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+        const prev = sentences[mainIdx - 1] ? '<span class="quote-context">' + esc(sentences[mainIdx - 1].trim()) + ' </span>' : '';
+        const main = '<strong>' + esc(sentences[mainIdx].trim()) + '</strong>';
+        const next = sentences[mainIdx + 1] ? ' <span class="quote-context">' + esc(sentences[mainIdx + 1].trim()) + '</span>' : '';
+
+        return prev + main + next;
+      }
+
+      function buildResultCard(r, i, hideTranscriptButton) {
+        const score = r.normalized_score ?? 0;
+        const searchTypeLabel = r.search_type === 'semantic'
+          ? 'semantic similarity score'
+          : (r.search_type || '');
+        const contextQuote = buildContextQuote(r);
+        const quoteContent = contextQuote != null
+          ? contextQuote
+          : ((r.highlighted_html != null && r.highlighted_html !== '')
+              ? r.highlighted_html
+              : (r.text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+        const longformLine = (r.longform_response != null)
+          ? '<div class="meta">Longform response: ' + String(r.longform_response).replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'
+          : '';
+        const transcriptBtn = hideTranscriptButton ? '' : '<div class="result-actions"><button type="button" class="btn-secondary btn-view-details" data-result-index="' + i + '">View Full Transcript</button></div>';
+        return '<div class="result-card" data-result-index="' + i + '">' +
+          '<div class="quote">' + quoteContent + '</div>' +
+          '<div><span class="score-badge ' + scoreClass(score) + '">' + score.toFixed(3) + '</span> ' + searchTypeLabel + '</div>' +
+          longformLine +
+          transcriptBtn +
+          '</div>';
+      }
+
+      if (groupByInterviewee) {
+        const byParticipant = new Map();
+        filtered.forEach((r, i) => {
+          const pid = getParticipantId(r.metadata, r.id);
+          if (!byParticipant.has(pid)) byParticipant.set(pid, []);
+          byParticipant.get(pid).push({ r, i });
+        });
+        byParticipant.forEach(entries => {
+          entries.sort((a, b) => (b.r.normalized_score ?? 0) - (a.r.normalized_score ?? 0));
+        });
+        const groups = Array.from(byParticipant.entries())
+          .map(([pid, entries]) => ({ pid, entries }))
+          .sort((a, b) => (b.entries[0].r.normalized_score ?? 0) - (a.entries[0].r.normalized_score ?? 0));
+        const headerMeta = (entries) => {
+          const meta = displayFilteredMeta(entries[0].r.metadata);
+
+          const age = meta.age != null ? 'Age: ' + meta.age : null;
+
+          const cityStateParts = [meta.city_of_residence, meta.state_of_residence].filter(Boolean);
+          const location = cityStateParts.length ? 'Location: ' + cityStateParts.join(', ') : null;
+
+          let income = null;
+          if (meta.income != null) {
+            const incomeStr = String(meta.income);
+            const hasPerYear = incomeStr.toLowerCase().includes('/year');
+            income = 'Income: ' + (hasPerYear ? incomeStr : incomeStr + '/year');
+          }
+
+          const pizza = meta.pizza_consumption != null
+            ? 'Pizza consumption: ' + meta.pizza_consumption
+            : null;
+
+          const metaParts = [age, location, income, pizza].filter(Boolean);
+          const excerptsCount = entries.length;
+          const excerptsText = excerptsCount + ' excerpt' + (excerptsCount !== 1 ? 's' : '') + ' surfaced';
+          const excerptsSpan = '<span style="font-weight:500;color:var(--gray-medium);"> (' + excerptsText + ')</span>';
+
+          if (!metaParts.length) {
+            return ' ' + excerptsSpan;
+          }
+
+          return ' — ' + metaParts.join(', ') + '. ' + excerptsSpan;
+        };
+        const firstResultIndex = (entries) => entries[0].i;
+        listEl.innerHTML = groups.map(({ pid, entries }) =>
+          '<div class="interviewee-group">' +
+          '<div class="interviewee-group-header">' +
+          'Interviewee ' + String(pid).replace(/</g,'&lt;').replace(/>/g,'&gt;') + headerMeta(entries) +
+          ' <button type="button" class="btn-secondary btn-view-details interviewee-transcript-btn" data-result-index="' + firstResultIndex(entries) + '">View Full Transcript</button>' +
+          '</div>' +
+          '<div class="interviewee-quotes">' +
+          entries.map(({ r, i }) => buildResultCard(r, i, true)).join('') +
+          '</div></div>'
+        ).join('');
+      } else {
+        listEl.innerHTML = filtered.map((r, i) => buildResultCard(r, i, false)).join('');
+      }
+
+      const metricsEl = document.getElementById('metrics');
+      metricsEl.innerHTML = '<p><strong>Total results:</strong> ' + filtered.length +
+        ' &nbsp; <strong>Full-text:</strong> ' + res.filter(r=>r.search_type==='fulltext').length +
+        ' &nbsp; <strong>Semantic:</strong> ' + res.filter(r=>r.search_type==='semantic').length +
+        ' &nbsp; <strong>Unique participants:</strong> ' + participants.size + '</p>';
+
+      if (distChart) distChart.destroy();
+      const cc = document.getElementById('dist-chart');
+      if (dist && dist.counts && dist.bins && cc) {
+        const ctx = cc.getContext('2d');
+        const labels = dist.bins.slice(0, -1).map((b, i) => (b + dist.bins[i+1]) / 2);
+        distChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels.map(x => x.toFixed(2)),
+            datasets: [{ label: 'Interviews', data: dist.counts, backgroundColor: '#1E3A5F' }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { title: { display: true, text: dist.title || 'Prevalence' } },
+            scales: {
+              x: { title: { display: true, text: 'Highest similarity per interview' } },
+              y: { beginAtZero: true, title: { display: true, text: 'Number of interviews' } }
+            }
+          }
+        });
+      }
+    }
+
+    document.getElementById('download-json').addEventListener('click', () => {
+      if (!lastPayload || !lastPayload.data) return;
+      const blob = new Blob([JSON.stringify(lastPayload.data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'search_results_' + (lastPayload.payload.query || 'query').replace(/\s+/g,'_') + '.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    document.getElementById('results-list').addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-view-details');
+      if (!btn || !window._lastFilteredResults) return;
+      const idx = parseInt(btn.getAttribute('data-result-index'), 10);
+      const r = window._lastFilteredResults[idx];
+      if (!r) return;
+      
+      // Display metadata in canonical order (matches data columns: participant_id → age → city → state → region → income → pizza_consumption → food_restrictions → q1..q5)
+      const metadataEl = document.getElementById('full-details-metadata');
+      const meta = r.metadata || {};
+      const FULL_DETAILS_META_ORDER = [
+        'participant_id', 'age', 'city_of_residence', 'state_of_residence', 'region_of_residence',
+        'income', 'pizza_consumption', 'food_restrictions',
+        'q1_response', 'q2_response', 'q3_response', 'q4_response', 'q5_response',
+        'sentence_count', 'start_sentence_idx', 'end_sentence_idx'
+      ];
+      if (Object.keys(meta).length > 0) {
+        const seen = new Set();
+        let metadataHtml = '<h3 style="color: var(--navy); font-size: 1.1rem; margin-bottom: 0.75rem; font-weight: 600;">Metadata</h3><table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;"><thead><tr style="background: var(--gray-bg);"><th style="padding: 0.6rem; border: 1px solid var(--border); text-align: left; color: var(--navy); font-weight: 600;">Field</th><th style="padding: 0.6rem; border: 1px solid var(--border); text-align: left; color: var(--navy); font-weight: 600;">Value</th></tr></thead><tbody>';
+        for (const key of FULL_DETAILS_META_ORDER) {
+          const actualKey = Object.keys(meta).find(k => k.toLowerCase() === key.toLowerCase());
+          if (actualKey != null && meta[actualKey] != null && meta[actualKey] !== '') {
+            seen.add(actualKey.toLowerCase());
+            const displayKey = actualKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const value = meta[actualKey];
+            const displayValue = value != null ? String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+            metadataHtml += `<tr><td style="padding: 0.6rem; border: 1px solid var(--border); font-weight: 500; color: var(--gray-dark);">${displayKey}</td><td style="padding: 0.6rem; border: 1px solid var(--border); color: var(--gray-dark);">${displayValue}</td></tr>`;
+          }
+        }
+        for (const [key, value] of Object.entries(meta)) {
+          if (seen.has(key.toLowerCase())) continue;
+          const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          const displayValue = value != null ? String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+          metadataHtml += `<tr><td style="padding: 0.6rem; border: 1px solid var(--border); font-weight: 500; color: var(--gray-dark);">${displayKey}</td><td style="padding: 0.6rem; border: 1px solid var(--border); color: var(--gray-dark);">${displayValue}</td></tr>`;
+        }
+        metadataHtml += '</tbody></table>';
+        metadataEl.innerHTML = metadataHtml;
+      } else {
+        metadataEl.innerHTML = '<p style="color: var(--gray-medium);">No metadata available.</p>';
+      }
+      
+      // Display full interview
+      const interviewEl = document.getElementById('full-interview-body');
+      if (r.full_text != null && r.full_text !== '') {
+        interviewEl.textContent = r.full_text;
+        document.getElementById('full-details-interview').style.display = 'block';
+      } else {
+        interviewEl.textContent = 'Full interview text not available.';
+        document.getElementById('full-details-interview').style.display = 'block';
+      }
+      
+      document.getElementById('full-details-modal').classList.add('open');
+    });
+    document.getElementById('close-full-details').addEventListener('click', () => {
+      document.getElementById('full-details-modal').classList.remove('open');
+    });
+
+    document.getElementById('data-info-btn').addEventListener('click', async () => {
+      try {
+        const r = await fetch(API + '/api/data-info');
+        if (!r.ok) throw new Error(await r.text());
+        const info = await r.json();
+        const body = document.getElementById('data-info-body');
+        let html = '<p><strong>Rows:</strong> ' + (info.shape && info.shape[0]) + ' &nbsp; <strong>Columns:</strong> ' + (info.shape && info.shape[1]) + '</p>';
+        html += '<p><strong>Columns:</strong> ' + (info.columns || []).join(', ') + '</p>';
+        if (info.sample && info.sample.length) {
+          const cols = Object.keys(info.sample[0] || {});
+          html += '<table><thead><tr>' + cols.map(c=>'<th>'+c+'</th>').join('') + '</tr></thead><tbody>';
+          info.sample.forEach(row => {
+            html += '<tr>' + cols.map(c => '<td>' + (row[c] != null ? String(row[c]) : '') + '</td>').join('') + '</tr>';
+          });
+          html += '</tbody></table>';
+        }
+        body.innerHTML = html;
+        document.getElementById('data-info-modal').classList.add('open');
+      } catch (e) {
+        showMsg('Data info failed: ' + (e.message || String(e)), 'error');
+      }
+    });
+    document.getElementById('close-modal').addEventListener('click', () => {
+      document.getElementById('data-info-modal').classList.remove('open');
+    });
+  </script>
+</body>
+</html>

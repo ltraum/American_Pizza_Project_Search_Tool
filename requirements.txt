@@ -1,0 +1,35 @@
+# Core data processing
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# Full-text search
+whoosh>=2.7.4  # Pure Python, Windows compatible
+
+# Semantic search - locally hostable models
+sentence-transformers>=2.2.0  # For embedding models
+torch>=2.0.0  # PyTorch for model inference
+transformers>=4.30.0  # Hugging Face transformers
+
+# Vector database for semantic search
+chromadb>=0.4.0  # Lightweight, local vector DB
+
+# Optional: For better performance on Windows
+# numpy>=1.24.0  # Usually comes with pandas/pytorch
+
+# Utilities
+python-dotenv>=1.0.0  # For configuration
+tqdm>=4.65.0  # Progress bars
+
+# For Carina cluster integration
+paramiko>=3.0.0  # SSH client for cluster access
+fabric>=3.0.0  # Simplified SSH/remote execution
+
+# Web UI
+# (FastAPI + static frontend; no Streamlit dependency)
+
+# FastAPI UI (faster, no full-page reruns)
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Query expansion with AI
+openai>=1.0.0  # For AI-based query expansion
