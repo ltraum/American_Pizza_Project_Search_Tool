@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from whoosh import index
 from whoosh.fields import Schema, TEXT, ID, STORED
+from whoosh.analysis import StemmingAnalyzer
 from whoosh.qparser import QueryParser, MultifieldParser
 from whoosh.query import Or, And
 import logging
@@ -33,7 +34,9 @@ class FullTextSearch:
         # Base schema with text and metadata
         schema_fields = {
             'id': ID(stored=True, unique=True),
-            'text': TEXT(stored=True),  # Main searchable text
+            # Stemming makes simple morphology match (mushroom vs mushrooms),
+            # without needing fuzzy query expansion.
+            'text': TEXT(stored=True, analyzer=StemmingAnalyzer()),  # Main searchable text
         }
         
         # Add metadata fields as stored (not searchable, but retrievable)
@@ -66,12 +69,18 @@ class FullTextSearch:
         self.index_path.mkdir(parents=True, exist_ok=True)
         
         # Create index
-        if not index.exists_in(str(self.index_path)):
+        index_already_existed = index.exists_in(str(self.index_path))
+        if not index_already_existed:
             logger.info(f"Creating new index at {self.index_path}")
             self.ix = index.create_in(str(self.index_path), self.schema)
         else:
             logger.info(f"Opening existing index at {self.index_path}")
             self.ix = index.open_dir(str(self.index_path))
+        
+        # Skip re-indexing when using a pre-built index (recreate=False and index existed)
+        if index_already_existed and not recreate:
+            logger.info("Using existing Whoosh index, skipping document indexing")
+            return
         
         # Index documents
         writer = self.ix.writer()
@@ -111,7 +120,15 @@ class FullTextSearch:
         
         logger.info(f"Loaded index from {self.index_path}")
     
-    def search(self, query: str, limit: int = None, fields: List[str] = None) -> List[Dict[str, Any]]:
+    def search(
+        self,
+        query: str,
+        limit: int = None,
+        fields: List[str] = None,
+        fallback_to_fuzzy: bool = True,
+        fuzzy_maxdist: int = 2,
+        min_results_for_fallback: int = 1,
+    ) -> List[Dict[str, Any]]:
         """
         Perform full-text search
         
@@ -139,53 +156,90 @@ class FullTextSearch:
         else:
             parser = MultifieldParser(fields, schema=self.ix.schema)
         
-        # Parse query
+        # Parse query (exact / stemmed matching)
         try:
             q = parser.parse(query)
         except Exception as e:
             logger.warning(f"Query parsing error: {e}. Using simple query.")
             q = parser.parse(query.replace('"', ''))
         
-        # Search
-        with self.ix.searcher() as searcher:
-            results = searcher.search(q, limit=limit)
-            
-            # Format results and deduplicate by document ID (safety check)
-            formatted_results = []
+        def _format(whoosh_results, match_type: str) -> List[Dict[str, Any]]:
+            formatted = []
             seen_ids = set()
-            for result in results:
-                doc_id = result['id']
-                # Skip if we've already seen this document ID
+            for result in whoosh_results:
+                doc_id = result["id"]
                 if doc_id in seen_ids:
                     continue
                 seen_ids.add(doc_id)
-                
                 doc = {
-                    'id': doc_id,
-                    'text': result.get('text', ''),
-                    'score': result.score,
-                    'rank': result.rank + 1,
+                    "id": doc_id,
+                    "text": result.get("text", ""),
+                    "score": float(result.score),
+                    "rank": int(result.rank) + 1,
+                    "match_type": match_type,  # "exact" | "fuzzy"
                 }
-                
-                # Add metadata
                 metadata = {}
                 for key in result.keys():
-                    if key.startswith('meta_'):
-                        orig_key = key.replace('meta_', '')
+                    if key.startswith("meta_"):
+                        orig_key = key.replace("meta_", "")
                         metadata[orig_key] = result[key]
-                
-                doc['metadata'] = metadata
-                formatted_results.append(doc)
+                doc["metadata"] = metadata
+                formatted.append(doc)
+            return formatted
+
+        # Search (exact/stemmed), with optional fuzzy fallback for typos.
+        formatted_results: List[Dict[str, Any]] = []
+        with self.ix.searcher() as searcher:
+            exact = searcher.search(q, limit=limit)
+            formatted_results = _format(exact, match_type="exact")
+
+            if (
+                fallback_to_fuzzy
+                and query
+                and '"' not in query  # avoid breaking phrase/advanced syntax
+                and len(formatted_results) < max(0, int(min_results_for_fallback))
+            ):
+                # Fuzzy fallback: allows small letter differences (edit distance).
+                # Stemming already handles pluralization; fuzzy is mainly for typos.
+                def _token_dist(token: str) -> int:
+                    # Keep fuzzy conservative for short tokens (reduces false positives).
+                    # Longer tokens can tolerate 2 edits (e.g. "pinapples" -> "pineapple").
+                    t = (token or "").strip()
+                    if len(t) <= 4:
+                        return 0
+                    if len(t) <= 6:
+                        return min(int(fuzzy_maxdist), 1)
+                    return int(fuzzy_maxdist)
+
+                fuzzy_parts = []
+                for word in query.split():
+                    w = word.strip()
+                    if not w:
+                        continue
+                    d = _token_dist(w)
+                    fuzzy_parts.append(f"{w}~{d}" if d > 0 else w)
+                fuzzy_query = " ".join(fuzzy_parts)
+                try:
+                    fq = parser.parse(fuzzy_query)
+                    fuzzy = searcher.search(fq, limit=limit)
+                    fuzzy_formatted = _format(fuzzy, match_type="fuzzy")
+                    # Merge: keep highest score per doc_id.
+                    by_id = {r["id"]: r for r in formatted_results}
+                    for r in fuzzy_formatted:
+                        if r["id"] not in by_id or r["score"] > by_id[r["id"]]["score"]:
+                            by_id[r["id"]] = r
+                    formatted_results = sorted(by_id.values(), key=lambda x: x.get("score", 0), reverse=True)
+                except Exception as e:
+                    logger.warning(f"Fuzzy fallback query parsing/search error: {e}")
         
         logger.info(f"Found {len(formatted_results)} unique results for query: {query}")
         return formatted_results
     
     def search_phrase(self, phrase: str, limit: int = None) -> List[Dict[str, Any]]:
         """Search for exact phrase"""
-        return self.search(f'"{phrase}"', limit=limit)
+        return self.search(f'"{phrase}"', limit=limit, fallback_to_fuzzy=False)
     
-    def search_fuzzy(self, query: str, limit: int = None) -> List[Dict[str, Any]]:
+    def search_fuzzy(self, query: str, limit: int = None, maxdist: int = 1) -> List[Dict[str, Any]]:
         """Fuzzy search (handles typos)"""
-        # Add ~ for fuzzy matching
-        fuzzy_query = " ".join([f"{word}~" for word in query.split()])
-        return self.search(fuzzy_query, limit=limit)
+        fuzzy_query = " ".join([f"{word}~{int(maxdist)}" for word in query.split()])
+        return self.search(fuzzy_query, limit=limit, fallback_to_fuzzy=False)

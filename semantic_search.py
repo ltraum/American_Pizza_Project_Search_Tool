@@ -13,11 +13,12 @@ from sentence_transformers import SentenceTransformer
 import torch
 
 from config import (
-    VECTOR_DB_DIR, 
-    SEMANTIC_MODEL_NAME, 
+    VECTOR_DB_DIR,
+    SEMANTIC_MODEL_NAME,
     SEMANTIC_SEARCH_TOP_K,
     WINDOWS_USE_CPU,
     EMBEDDINGS_CACHE_DIR,
+    EMBED_BATCH_SIZE,
     ENABLE_QUERY_EXPANSION,
     QUERY_EXPANSION_MODEL,
     MULTI_QUERY_RRF,
@@ -297,7 +298,7 @@ class SemanticSearch:
         
         # Generate embeddings in batches for efficiency
         # When using E5/BGE-style models, prepend passage prefix to each text
-        batch_size = 32
+        batch_size = EMBED_BATCH_SIZE
         all_embeddings = []
         texts_to_encode = [
             _apply_query_passage_prefix(t, is_query=False) for t in texts

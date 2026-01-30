@@ -61,6 +61,37 @@ The Web UI shows this when **OpenAI**-based query expansion fails. The app uses 
 
 Ensure `openai` and `python-dotenv` are installed (`pip install -r requirements.txt`).
 
+## Deploying on Render (Memory Management)
+
+On Render’s **free tier** (512 MB RAM), the app can hit the memory limit and fail with 502 / instance failures. The stack (PyTorch, sentence-transformers, ChromaDB, Whoosh, and embedding all documents on first request) often exceeds 512 MB.
+
+**Option 1: Upgrade Render plan**  
+Use a paid plan with more RAM (e.g. 2 GB+). The app will run without changes.
+
+**Option 2: Optimize for low memory (CPU-only PyTorch + pre-built indexes)**
+
+1. **CPU-only PyTorch**  
+   On Render, use a **Build Command** that installs PyTorch without CUDA first, then the rest of the deps (without reinstalling full `torch`):
+   ```bash
+   pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements-render.txt
+   ```
+   The repo includes `requirements-render.txt`, which omits `torch` so the CPU wheel is not overwritten.
+
+2. **Pre-build indexes**  
+   Build the Whoosh and Chroma indexes **locally**, then commit them so Render does not run the heavy embedding step at startup.
+
+   - From the project root (with the same data file and env you use in production):
+     ```bash
+     python search_tool.py --rebuild
+     ```
+   - Add the index dirs to the repo (they are in `.gitignore` by default):
+     ```bash
+     git add -f search_index/ vector_db/
+     git commit -m "Add pre-built search indexes for Render"
+     git push
+     ```
+   - On deploy, the app uses `rebuild_index=False` by default. If `search_index/` and `vector_db/` exist (e.g. from the repo), it will load them and skip building.
+
 ## Project layout
 
 - `search_tool.py` — main CLI/API

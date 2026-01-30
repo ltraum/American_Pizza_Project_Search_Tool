@@ -1,0 +1,33 @@
+# Render / low-memory deploy: install CPU-only PyTorch first, then:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements-render.txt
+
+# Core data processing
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# Full-text search
+whoosh>=2.7.4  # Pure Python, Windows compatible
+
+# Semantic search - locally hostable models
+sentence-transformers>=2.2.0  # For embedding models
+# torch: install CPU-only via: pip install torch --index-url https://download.pytorch.org/whl/cpu
+transformers>=4.30.0  # Hugging Face transformers
+
+# Vector database for semantic search
+chromadb>=0.4.0  # Lightweight, local vector DB
+
+# Utilities
+python-dotenv>=1.0.0  # For configuration
+tqdm>=4.65.0  # Progress bars
+
+# For Carina cluster integration
+paramiko>=2.0.0  # SSH client for cluster access
+fabric>=3.0.0  # Simplified SSH/remote execution
+
+# FastAPI UI
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Query expansion with AI
+openai>=1.0.0  # For AI-based query expansion

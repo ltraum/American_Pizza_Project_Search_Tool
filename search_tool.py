@@ -4,6 +4,7 @@ Provides unified interface for searching pizza interview data
 """
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
 import logging
@@ -386,6 +387,40 @@ class PizzaSearchTool:
             seen_ids = set()
             seen_doc_ids = set()
             combined = []
+            # For hybrid, avoid letting a semantic "near miss" hide an exact keyword hit.
+            # Only treat a doc as "covered" by semantic chunks if the chunk includes
+            # at least one whole-word query term.
+            query_terms = [
+                t for t in re.findall(r"\b\w+\b", (query or "").lower())
+                if len(t) >= 3
+            ]
+
+            def _variants(t: str) -> List[str]:
+                t = (t or "").lower().strip()
+                if not t:
+                    return []
+                out = {t}
+                if len(t) > 4 and t.endswith("ies"):
+                    out.add(t[:-3] + "y")
+                if len(t) > 4 and t.endswith("es"):
+                    out.add(t[:-2])
+                if len(t) > 3 and t.endswith("s"):
+                    out.add(t[:-1])
+                if len(t) > 2 and not t.endswith("s"):
+                    out.add(t + "s")
+                if len(t) > 2 and t.endswith("y"):
+                    out.add(t[:-1] + "ies")
+                return sorted({x for x in out if x and len(x) >= 3})
+
+            def _has_whole_word_term(text: str) -> bool:
+                if not text or not query_terms:
+                    return False
+                tl = text.lower()
+                for t in query_terms:
+                    vs = _variants(t) or [t]
+                    if any(re.search(rf"\b{re.escape(v)}\b", tl) for v in vs):
+                        return True
+                return False
             
             # Add semantic results first (typically higher quality)
             for result in semantic_results:
@@ -396,8 +431,9 @@ class PizzaSearchTool:
                         result['search_type'] = 'semantic'
                         combined.append(result)
                         seen_ids.add(result['id'])
-                        # Also track doc_id to avoid adding fulltext duplicate
-                        if 'doc_id' in result:
+                        # Only block fulltext duplicates when this semantic chunk actually
+                        # contains a whole-word query term; otherwise let fulltext surface.
+                        if 'doc_id' in result and (not query_terms or _has_whole_word_term(result.get("text") or "")):
                             seen_doc_ids.add(result['doc_id'])
                 else:
                     # Aggregated result - dedupe by doc_id or id
@@ -406,7 +442,7 @@ class PizzaSearchTool:
                         result['search_type'] = 'semantic'
                         combined.append(result)
                         seen_ids.add(result['id'])
-                        if 'doc_id' in result:
+                        if 'doc_id' in result and (not query_terms or _has_whole_word_term(result.get("text") or "")):
                             seen_doc_ids.add(result['doc_id'])
             
             # Add fulltext results that weren't already included
@@ -418,8 +454,15 @@ class PizzaSearchTool:
                     combined.append(result)
                     seen_ids.add(result_id)
             
-            # Sort by score
-            combined.sort(key=lambda x: x['score'], reverse=True)
+            # Sort by: exact whole-word match first, then fulltext over semantic, then score
+            def _sort_key(r: Dict[str, Any]):
+                txt = (r.get("text") or "").lower()
+                exact = 1 if (query_terms and _has_whole_word_term(txt)) else 0
+                st = r.get("search_type")
+                st_bias = 1 if st == "fulltext" else 0
+                return (exact, st_bias, r.get("score", 0))
+
+            combined.sort(key=_sort_key, reverse=True)
             results["results"] = self._enrich_results_with_full_text(
                 combined if limit is None else combined[:limit]
             )
@@ -439,6 +482,66 @@ class PizzaSearchTool:
         results["results"] = filter_metadata_prefixed_results(results["results"])
         if before > len(results["results"]):
             logger.info(f"Filtered out {before - len(results['results'])} metadata-prefixed excerpts")
+
+        # Apply a global minimum score threshold in semantic+hybrid modes.
+        #
+        # Semantic results: `score` is cosine similarity in [0, 1].
+        # Full-text results: Whoosh scores are unbounded, so we normalize to [0, 1]
+        # within the current result set by dividing by max full-text score.
+        #
+        # Keep a result if EITHER semantic similarity >= threshold OR normalized
+        # full-text relevance >= threshold. Drop only when BOTH are below.
+        if semantic_threshold is not None:
+            try:
+                thr = float(semantic_threshold)
+            except (TypeError, ValueError):
+                thr = None
+            if thr is not None and thr > 0:
+                ft_scores = [
+                    float(r.get("score", 0) or 0)
+                    for r in (results.get("results") or [])
+                    if r.get("search_type") == "fulltext"
+                ]
+                max_ft = max(ft_scores) if ft_scores else 0.0
+
+                def _ft_norm(score: float) -> float:
+                    if max_ft and max_ft > 0:
+                        return max(0.0, min(1.0, float(score) / float(max_ft)))
+                    return 0.0
+
+                kept = []
+                removed = 0
+                for r in results.get("results") or []:
+                    st = r.get("search_type")
+                    sem_sim = None
+                    ft_norm = None
+                    if st == "semantic":
+                        try:
+                            sem_sim = float(r.get("score", 0) or 0.0)
+                        except (TypeError, ValueError):
+                            sem_sim = 0.0
+                        sem_sim = max(0.0, min(1.0, sem_sim))
+                        r["semantic_similarity"] = sem_sim
+                    elif st == "fulltext":
+                        try:
+                            ft_norm = _ft_norm(float(r.get("score", 0) or 0.0))
+                        except (TypeError, ValueError):
+                            ft_norm = 0.0
+                        r["fulltext_score_normalized"] = ft_norm
+
+                    sem_ok = (sem_sim is not None) and (sem_sim >= thr)
+                    ft_ok = (ft_norm is not None) and (ft_norm >= thr)
+                    if sem_ok or ft_ok:
+                        kept.append(r)
+                    else:
+                        removed += 1
+
+                if removed:
+                    logger.info(
+                        f"Applied minimum score threshold {thr:.3f}: "
+                        f"removed {removed} results (kept {len(kept)})"
+                    )
+                results["results"] = kept
         
         results["total_results"] = len(results["results"])
         return results

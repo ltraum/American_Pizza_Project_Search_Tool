@@ -317,6 +317,9 @@
       background: var(--gray-card);
       border: 1px solid var(--border);
       border-radius: 6px;
+      width: 95%;
+      margin-left: auto;
+      margin-right: auto;
       margin-bottom: 1.25rem;
       overflow: hidden;
       box-shadow: 0 1px 3px rgba(0,0,0,0.06);
@@ -361,7 +364,7 @@
         <option value="semantic">Semantic</option>
       </select>
       <div id="threshold-wrap" style="margin-top:0.5rem;">
-        <label>Minimum similarity score threshold</label>
+        <label>Minimum score threshold (semantic similarity or full-text relevance)</label>
         <input type="number" id="threshold" min="0" max="1" step="0.1" value="0.25" />
       </div>
       <hr style="margin:1.25rem 0; border:0; border-top:1px solid var(--border);" />
@@ -759,6 +762,10 @@
         });
         if (!r.ok) {
           const t = await r.text();
+          if (r.status === 502 || r.status === 503 || r.status === 504 || (t && (t.trimStart().startsWith('<') || /Bad Gateway|Service Unavailable|Gateway Timeout/i.test(t)))) {
+            showMsg('The search service is temporarily unavailable. Please try again in a few minutes. If this persists, the server may be starting up or under heavy load.', 'error');
+            return;
+          }
           throw new Error(t || r.statusText);
         }
         const data = await r.json();
@@ -766,7 +773,13 @@
         renderResults(data);
         showMsg('');
       } catch (e) {
-        showMsg('Search failed: ' + (e.message || String(e)), 'error');
+        const msg = e.message || String(e);
+        const isHtmlOrGateway = typeof msg === 'string' && (msg.trimStart().startsWith('<') || /Bad Gateway|502|503|504/i.test(msg));
+        if (isHtmlOrGateway) {
+          showMsg('The search service is temporarily unavailable. Please try again in a few minutes.', 'error');
+        } else {
+          showMsg('Search failed: ' + msg, 'error');
+        }
       }
     }
 
@@ -840,10 +853,20 @@
       }
 
       function buildResultCard(r, i, hideTranscriptButton) {
-        const score = r.normalized_score ?? 0;
+        const normalizedScore = r.normalized_score ?? 0;
+        const rawScore = (typeof r.score === 'number')
+          ? r.score
+          : (r.score != null ? parseFloat(r.score) : null);
+        // For semantic results, show true similarity (r.score). For fulltext/hybrid,
+        // show the UI-normalized score used for ranking and distribution.
+        const score = (r.search_type === 'semantic' && rawScore != null && !Number.isNaN(rawScore))
+          ? rawScore
+          : normalizedScore;
         const searchTypeLabel = r.search_type === 'semantic'
           ? 'semantic similarity score'
-          : (r.search_type || '');
+          : (r.search_type === 'fulltext'
+              ? 'full-text relevance (normalized)'
+              : (r.search_type || ''));
         const contextQuote = buildContextQuote(r);
         const quoteContent = contextQuote != null
           ? contextQuote
@@ -1020,7 +1043,14 @@
     document.getElementById('data-info-btn').addEventListener('click', async () => {
       try {
         const r = await fetch(API + '/api/data-info');
-        if (!r.ok) throw new Error(await r.text());
+        if (!r.ok) {
+          const t = await r.text();
+          if (r.status === 502 || r.status === 503 || r.status === 504 || (t && (t.trimStart().startsWith('<') || /Bad Gateway|Service Unavailable|Gateway Timeout/i.test(t)))) {
+            showMsg('The service is temporarily unavailable. Please try again in a few minutes.', 'error');
+            return;
+          }
+          throw new Error(t || r.statusText);
+        }
         const info = await r.json();
         const body = document.getElementById('data-info-body');
         let html = '<p><strong>Rows:</strong> ' + (info.shape && info.shape[0]) + ' &nbsp; <strong>Columns:</strong> ' + (info.shape && info.shape[1]) + '</p>';
@@ -1036,7 +1066,9 @@
         body.innerHTML = html;
         document.getElementById('data-info-modal').classList.add('open');
       } catch (e) {
-        showMsg('Data info failed: ' + (e.message || String(e)), 'error');
+        const msg = e.message || String(e);
+        const isHtmlOrGateway = typeof msg === 'string' && (msg.trimStart().startsWith('<') || /Bad Gateway|502|503|504/i.test(msg));
+        showMsg(isHtmlOrGateway ? 'The service is temporarily unavailable. Please try again in a few minutes.' : 'Data info failed: ' + msg, 'error');
       }
     });
     document.getElementById('close-modal').addEventListener('click', () => {

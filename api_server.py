@@ -148,24 +148,141 @@ async def root(_: None = Depends(require_basic_auth)):
     return FileResponse(INDEX_HTML)
 
 
-def _add_normalized_scores(results: Dict[str, Any]) -> None:
-    """Mutate results['results'] in place, adding normalized_score (0–1) to each item."""
+_STOPWORDS = {
+    # Small stopword list: enough to avoid boosting on "the", etc.
+    "a", "an", "and", "are", "as", "at", "be", "but", "by",
+    "for", "from", "has", "have", "he", "her", "hers", "him", "his",
+    "i", "if", "in", "into", "is", "it", "its",
+    "me", "my", "of", "on", "or", "our", "ours", "she", "so",
+    "that", "the", "their", "them", "then", "there", "these", "they", "this", "those", "to",
+    "was", "we", "were", "what", "when", "where", "which", "who", "why", "with", "you", "your",
+}
+
+
+def _extract_query_terms(query: str) -> List[str]:
+    terms = re.findall(r"\b\w+\b", (query or "").lower())
+    # Keep content-ish terms only; avoid over-penalizing short/common words.
+    return [t for t in terms if len(t) >= 3 and t not in _STOPWORDS]
+
+
+def _extract_quoted_phrases(query: str) -> List[str]:
+    phrases = [p.strip() for p in re.findall(r'"([^"]+)"', query or "") if p.strip()]
+    # Cap to avoid pathological inputs
+    return phrases[:5]
+
+
+def _term_variants(term: str) -> List[str]:
+    """
+    Very small morphology helper for UI-facing matching/boosting/highlighting.
+    This is NOT semantic stemming; it just helps plural/singular queries line up
+    with the underlying text (e.g. "pineapples" vs "pineapple").
+    """
+    t = (term or "").lower().strip()
+    if not t:
+        return []
+    out = {t}
+    # singularize common plural forms
+    if len(t) > 4 and t.endswith("ies"):
+        out.add(t[:-3] + "y")
+    if len(t) > 4 and t.endswith("es"):
+        out.add(t[:-2])
+    if len(t) > 3 and t.endswith("s"):
+        out.add(t[:-1])
+    # pluralize simple singular forms
+    if len(t) > 2 and not t.endswith("s"):
+        out.add(t + "s")
+    if len(t) > 2 and t.endswith("y"):
+        out.add(t[:-1] + "ies")
+    # keep only reasonable tokens
+    out = {x for x in out if x and len(x) >= 3 and x not in _STOPWORDS}
+    return sorted(out)
+
+
+def _whole_word_match_count(text: str, terms: List[str]) -> int:
+    if not text or not terms:
+        return 0
+    tl = text.lower()
+    c = 0
+    for t in terms:
+        # Whole-word match: "pineapple" should not match "pineapplesauce"
+        variants = _term_variants(t) or [t]
+        if any(re.search(rf"\b{re.escape(v)}\b", tl) for v in variants):
+            c += 1
+    return c
+
+
+def _phrase_match(text: str, phrases: List[str]) -> bool:
+    if not text or not phrases:
+        return False
+    tl = text.lower()
+    for p in phrases:
+        pl = p.lower()
+        # Whole phrase boundary match at edges; simple but effective.
+        if re.search(rf"\b{re.escape(pl)}\b", tl):
+            return True
+    return False
+
+
+def _add_normalized_scores(results: Dict[str, Any], query: str) -> None:
+    """
+    Mutate results['results'] in place, adding normalized_score (0–1) to each item.
+
+    In hybrid mode, we want:
+    - exact (whole-word) matches for the original query to rank first
+    - high-scoring full-text hits to rank above semantic-only "near misses"
+    """
     arr = results.get("results") or []
     fulltext_scores = [r.get("score", 0) for r in arr if r.get("search_type") == "fulltext"]
     max_ft = max(fulltext_scores) if fulltext_scores else 1.0
+
+    terms = _extract_query_terms(query)
+    phrases = _extract_quoted_phrases(query)
+    is_single_term_query = len(terms) == 1 and not phrases
+
     for r in arr:
         st = r.get("search_type", "hybrid")
-        s = r.get("score", 0)
+        s = r.get("score", 0) or 0.0
+
+        # Base normalization: keep legacy behavior but clamp to [0, 1].
         if st == "semantic":
-            r["normalized_score"] = min(1.0, max(0.0, s))
+            base = float(s)
         elif st == "fulltext":
-            r["normalized_score"] = min(1.0, max(0.0, s / max_ft)) if max_ft and max_ft > 0 else min(1.0, max(0.0, s / 10.0))
+            base = float(s) / float(max_ft) if max_ft and max_ft > 0 else float(s) / 10.0
         else:
             sem = r.get("semantic_score")
-            if sem is not None:
-                r["normalized_score"] = min(1.0, max(0.0, sem))
-            else:
-                r["normalized_score"] = min(1.0, max(0.0, s / max_ft)) if max_ft and max_ft > 0 else min(1.0, max(0.0, s / 10.0))
+            base = float(sem) if sem is not None else (float(s) / float(max_ft) if max_ft and max_ft > 0 else float(s) / 10.0)
+        base = min(1.0, max(0.0, base))
+
+        # Compute exact-match signals (prefer whole-word matches).
+        text_for_match = (r.get("text") or r.get("full_text") or "").strip()
+        phrase_hit = _phrase_match(text_for_match, phrases)
+        term_hits = _whole_word_match_count(text_for_match, terms)
+        has_any_term = term_hits > 0
+        has_all_terms = bool(terms) and term_hits == len(terms)
+
+        # Boost exact matches; gently bias toward full-text when scores are close.
+        boost = 0.0
+        if phrase_hit:
+            boost += 0.25
+        elif has_all_terms:
+            boost += 0.18
+        elif has_any_term:
+            boost += 0.10
+
+        if st == "fulltext":
+            boost += 0.03
+
+        # Penalize semantic "false positives" for keyword-ish queries (like "pineapple").
+        # Keep them, but push them down below literal matches.
+        if st == "semantic" and terms and not has_any_term and not phrase_hit:
+            base *= 0.55 if is_single_term_query else 0.75
+
+        # Penalize fulltext hits that don't contain any term variant; this avoids
+        # misleading 1.000 badges for documents that don't actually mention the term.
+        if st == "fulltext" and terms and not has_any_term and not phrase_hit:
+            base *= 0.45 if is_single_term_query else 0.7
+
+        r["normalized_score"] = min(1.0, max(0.0, base + boost))
 
 
 @app.post("/api/search")
@@ -179,8 +296,14 @@ async def search_api(body: SearchRequest, _: None = Depends(require_basic_auth))
         semantic_threshold=body.semantic_threshold if (body.semantic_threshold or 0) > 0 else None,
         metadata_filters=body.metadata_filters,
     )
-    _add_normalized_scores(results)
+    _add_normalized_scores(results, body.query)
     _enrich_fulltext_results(results, body.query)
+    # Ensure UI shows best (exact-match boosted) results first even when not grouped.
+    results["results"] = sorted(
+        results.get("results") or [],
+        key=lambda r: (r.get("normalized_score") or 0),
+        reverse=True,
+    )
     distribution = compute_distribution_data(results, query=body.query)
     return {"results": results, "distribution": distribution}
 

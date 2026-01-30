@@ -1,5 +1,5 @@
 """
-Shared helpers for search result enrichment: fulltext snippet highlighting,
+Shared helpers for search result improvement: fulltext snippet highlighting,
 longform_response inference, and full_text for "View full interview".
 """
 import html
@@ -64,12 +64,33 @@ def sentence_matching_snippet_and_longform(
     """
     if not full_text:
         return "", "", None
-    query_words = re.findall(r"\b\w+\b", (query or "").lower())
+    base_words = re.findall(r"\b\w+\b", (query or "").lower())
+    # Add simple singular/plural variants so "pineapples" highlights "pineapple" and vice versa.
+    query_words = set()
+    for w in base_words:
+        w = w.strip().lower()
+        if not w:
+            continue
+        query_words.add(w)
+        if len(w) > 4 and w.endswith("ies"):
+            query_words.add(w[:-3] + "y")
+        if len(w) > 4 and w.endswith("es"):
+            query_words.add(w[:-2])
+        if len(w) > 3 and w.endswith("s"):
+            query_words.add(w[:-1])
+        if len(w) > 2 and not w.endswith("s"):
+            query_words.add(w + "s")
+        if len(w) > 2 and w.endswith("y"):
+            query_words.add(w[:-1] + "ies")
+    query_words = [w for w in sorted(query_words) if len(w) >= 3]
     sentences = re.split(r"(?<=[.!?])\s+", full_text)
     if not query_words:
         snippet = " ".join(sentences[:2]) if len(sentences) >= 2 else (full_text[:400] + "..." if len(full_text) > 400 else full_text)
         return snippet, html.escape(snippet), None
-    matching: List[str] = [s for s in sentences if any(w in s.lower() for w in query_words)]
+    matching: List[str] = [
+        s for s in sentences
+        if any(re.search(rf"\b{re.escape(w)}\b", s.lower()) for w in query_words)
+    ]
     if not matching:
         snippet = " ".join(sentences[:2]) if len(sentences) >= 2 else (full_text[:400] + "..." if len(full_text) > 400 else full_text)
     else:
@@ -78,7 +99,7 @@ def sentence_matching_snippet_and_longform(
     escaped = html.escape(snippet)
     spans: List[Tuple[int, int]] = []
     for w in query_words:
-        for m in re.finditer(re.escape(w), escaped, re.IGNORECASE):
+        for m in re.finditer(rf"\b{re.escape(w)}\b", escaped, re.IGNORECASE):
             spans.append((m.start(), m.end()))
     spans.sort(key=lambda x: (x[0], -x[1]))
     merged: List[Tuple[int, int]] = []

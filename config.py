@@ -72,6 +72,9 @@ MULTI_QUERY_MAX_PHRASES = int(os.getenv("MULTI_QUERY_MAX_PHRASES", "3"))
 CHUNK_WINDOW_SIZE = int(os.getenv("CHUNK_WINDOW_SIZE", "1"))  # 1 = one sentence per chunk; 2 = sentence pairs
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "0"))  # 0 when window_size=1; use 1 for overlapping pairs when window_size=2
 
+# Embedding batch size during index build. Lower = less peak RAM, slower build (e.g. 8 or 16 on 512MB)
+EMBED_BATCH_SIZE = int(os.getenv("EMBED_BATCH_SIZE", "32"))
+
 # E5/BGE-style query/passage prefix (set true when using intfloat/e5-* or BAAI/bge-*)
 USE_QUERY_PASSAGE_PREFIX = os.getenv("USE_QUERY_PASSAGE_PREFIX", "false").lower() == "true"
 QUERY_PREFIX = os.getenv("QUERY_PREFIX", "query: ")
