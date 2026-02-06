@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>American Pizza Project Explorer</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <style>
     :root {
       --navy: #1E3A5F;
@@ -16,6 +17,13 @@
       --gray-bg: #F5F5F5;
       --gray-card: #FFFFFF;
       --border: #E0E0E0;
+      --theme-msg-green: #1a7f1a;
+    }
+    .theme-loading-msg {
+      color: var(--theme-msg-green);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: 0;
     }
     * { box-sizing: border-box; }
     body {
@@ -346,6 +354,155 @@
       overflow-y: auto;
       padding: 0.5rem;
     }
+
+    /* ---- Theme mode ---- */
+    .theme-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1rem;
+      align-items: start;
+    }
+    .theme-left-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-width: 0;
+    }
+    .theme-card {
+      background: var(--gray-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .theme-viz-wrap {
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+    }
+    .theme-tooltip {
+      position: fixed;
+      z-index: 9999;
+      max-width: 420px;
+      padding: 0.75rem 0.85rem;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--gray-dark);
+      display: none;
+      white-space: normal;
+    }
+    .theme-tooltip .tt-title {
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 0.4rem;
+    }
+    .theme-tooltip ul { margin: 0.35rem 0 0.35rem 1.1rem; padding: 0; }
+    .theme-tooltip li { margin: 0.15rem 0; }
+
+    /* ---- Explorer (theme x region) ---- */
+    .explorer-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1rem;
+      align-items: start;
+      margin-top: 1rem;
+    }
+    .explorer-matrix-wrap {
+      width: 100%;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+    }
+    .explorer-details {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: var(--gray-dark);
+    }
+    .explorer-details .title {
+      font-weight: 800;
+      color: var(--navy);
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+    .explorer-details ul { margin: 0.35rem 0 0.35rem 1.1rem; padding: 0; }
+    .explorer-details li { margin: 0.25rem 0; }
+
+    /* ---- Theme scoring table ---- */
+    #theme-score-table th, #theme-score-table td {
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 0.6rem;
+      vertical-align: top;
+    }
+    #theme-score-table th {
+      position: sticky;
+      top: 0;
+      background: var(--gray-bg);
+      color: var(--navy);
+      font-weight: 700;
+      z-index: 1;
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+    .pill-high { background: rgba(30,58,95,0.12); border-color: rgba(30,58,95,0.25); color: var(--navy); }
+    .pill-mid { background: rgba(139,38,53,0.10); border-color: rgba(139,38,53,0.25); color: var(--dark-red); }
+    .pill-low { background: rgba(107,107,107,0.10); border-color: rgba(107,107,107,0.25); color: var(--gray-medium); }
+
+    /* ---- Theme cards ---- */
+    #theme-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .concept-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .concept-card .title {
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 0.25rem;
+    }
+    .concept-card .muted {
+      color: var(--gray-medium);
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+    .concept-card .section {
+      margin-top: 0.6rem;
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+    .concept-card .section strong {
+      color: var(--gray-dark);
+    }
+    .concept-card ul { margin: 0.35rem 0 0.35rem 1.1rem; padding: 0; }
+    .concept-card li { margin: 0.25rem 0; }
+    .mini-chart {
+      width: 100%;
+      overflow: hidden;
+      margin-top: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+    }
   </style>
 </head>
 <body>
@@ -353,29 +510,79 @@
   <div class="layout">
     <aside class="sidebar">
       <h2>Settings</h2>
-      <label class="toggle-row">
-        <input type="checkbox" id="group-by-interviewee" checked />
-        <span>Group results by interviewee</span>
+      <label class="toggle-row" style="margin-bottom:0.25rem;">
+        <input type="checkbox" id="theme-mode" />
+        <span>Theme mode (LLooM-style)</span>
       </label>
-      <label>Search type</label>
-      <select id="search-type">
-        <option value="hybrid">Hybrid</option>
-        <option value="fulltext">Full-text</option>
-        <option value="semantic">Semantic</option>
-      </select>
-      <div id="threshold-wrap" style="margin-top:0.5rem;">
-        <label>Minimum score threshold (semantic similarity or full-text relevance)</label>
-        <input type="number" id="threshold" min="0" max="1" step="0.1" value="0.25" />
+      <div id="theme-controls" style="display:none; margin-bottom: 1rem;">
+        <label>Max themes (clusters)</label>
+        <input type="number" id="theme-max-themes" min="1" max="50" step="1" value="12" />
+        <div style="margin-top:0.75rem; padding:0.6rem; background:var(--gray-bg); border:1px solid var(--border); border-radius:6px; font-size:0.85rem; color:var(--gray-dark); line-height:1.5;">
+          <strong>Current constraints:</strong> 1 bullet is created per 2–3 sentences; bullet length is 10–18 words.
+        </div>
+
+        <hr style="margin:1rem 0; border:0; border-top:1px solid var(--border);" />
+        <h3 style="margin-top:0;">Theme-mode dataset</h3>
+        <label>Text source (which question response to cluster)</label>
+        <select id="theme-text-source">
+          <option value="all">All (q1–q5 combined)</option>
+          <option value="q1">q1 only</option>
+          <option value="q2">q2 only</option>
+          <option value="q3">q3 only</option>
+          <option value="q4">q4 only</option>
+          <option value="q5">q5 only</option>
+        </select>
+
+        <div id="metadata-filters-anchor-theme" style="margin-top:0.9rem;"></div>
+
+        <hr style="margin:1rem 0; border:0; border-top:1px solid var(--border);" />
+        <h3 style="margin-top:0;">LLM scoring (graded)</h3>
+        <div style="margin-top:0.25rem; padding:0.6rem; background:var(--gray-bg); border:1px solid var(--border); border-radius:6px; font-size:0.85rem; color:var(--gray-dark); line-height:1.5;">
+          <strong>Current constraints:</strong> Bullets are scored vs themes (A–E → 0–1); batch size is 6 examples per LLM call; 1-sentence theme summaries are generated. All bullets are scored (no cap).
+        </div>
+
+        <button type="button" class="btn-secondary" id="theme-save-local">Save theme run (local)</button>
+        <button type="button" class="btn-secondary" id="theme-save-server">Save theme run (server)</button>
+
+        <label style="margin-top:0.75rem;">Load saved run (local)</label>
+        <select id="theme-load-local"></select>
+        <button type="button" class="btn-secondary" id="theme-load-local-btn">Load local run</button>
+
+        <label style="margin-top:0.75rem;">Load saved run (server)</label>
+        <select id="theme-load-server"></select>
+        <button type="button" class="btn-secondary" id="theme-refresh-server">Refresh server list</button>
+        <button type="button" class="btn-secondary" id="theme-load-server-btn">Load server run</button>
       </div>
-      <hr style="margin:1.25rem 0; border:0; border-top:1px solid var(--border);" />
-      <h3>Metadata Filters</h3>
-      <div id="filters-container"></div>
-      <button type="button" class="btn-secondary" id="add-filter">+ Add Filter</button>
-      <button type="button" class="btn-primary" id="update-search" style="margin-top:0.75rem;">Update Search</button>
-      <hr style="margin:1.25rem 0; border:0; border-top:1px solid var(--border);" />
-      <p style="font-size:0.75rem; color:var(--gray-medium); line-height:1.5;">
-        Hybrid combines full-text and semantic search. Full-text uses keywords; semantic uses meaning.
-      </p>
+
+      <div id="search-controls">
+        <label class="toggle-row">
+          <input type="checkbox" id="group-by-interviewee" checked />
+          <span>Group results by interviewee</span>
+        </label>
+        <label>Search type</label>
+        <select id="search-type">
+          <option value="hybrid">Hybrid</option>
+          <option value="fulltext">Full-text</option>
+          <option value="semantic">Semantic</option>
+        </select>
+        <div id="threshold-wrap" style="margin-top:0.5rem;">
+          <label>Minimum score threshold (semantic similarity or full-text relevance)</label>
+          <input type="number" id="threshold" min="0" max="1" step="0.1" value="0.25" />
+        </div>
+        <hr style="margin:1.25rem 0; border:0; border-top:1px solid var(--border);" />
+        <p style="font-size:0.75rem; color:var(--gray-medium); line-height:1.5;">
+          Hybrid combines full-text and semantic search. Full-text uses keywords; semantic uses meaning.
+        </p>
+      </div>
+
+      <div id="metadata-filters-anchor-search"></div>
+      <div id="metadata-filters-section">
+        <hr style="margin:1.25rem 0; border:0; border-top:1px solid var(--border);" />
+        <h3>Metadata Filters</h3>
+        <div id="filters-container"></div>
+        <button type="button" class="btn-secondary" id="add-filter">+ Add Filter</button>
+        <button type="button" class="btn-primary" id="update-search" style="margin-top:0.75rem;">Update Search</button>
+      </div>
     </aside>
     <main class="content">
       <div class="info-dropdowns">
@@ -397,9 +604,17 @@
         <details>
           <summary>How this search works</summary>
           <div class="info-body">
+            <div style="font-weight:800;color:var(--navy); margin-bottom:0.35rem;">General Search</div>
             <p><strong>Semantic search:</strong> Interview text is split into sentence-sized chunks (1 sentence per chunk by default). Each chunk is turned into a vector (embedding) using a sentence-transformer model (currently: all-MiniLM-L6-v2) and stored in a local index. Your query is embedded the same way, and the tool returns the chunks whose vectors are closest in meaning to the query.</p>
             <p><strong>Full-text search:</strong> Finds passages by keyword matching. Results are based on whether your search terms (or close variants) appear in the text, so it’s best for exact words like “pepperoni”, “box”, or “utensils”.</p>
             <p><strong>Hybrid search:</strong> Combines semantic matching (meaning) with full-text matching (keywords). It identifies semantic results first, then adds additional keyword hits that weren’t already returned by semantic search.</p>
+
+            <div style="font-weight:800;color:var(--navy); margin:0.85rem 0 0.35rem 0;">Theme mode (LLooM-style)</div>
+            <p><strong>0) Take user input:</strong> You provide a short steering term plus optional filters (question + metadata).</p>
+            <p><strong>1) Condense input data:</strong> The system distills each interview into short bullet “excerpts” (about 2–3 sentences each) related to the steering term.</p>
+            <p><strong>2) Group into themes:</strong> Bullets are embedded and clustered (UMAP + HDBSCAN) into candidate theme concepts.</p>
+            <p><strong>3) User evaluation:</strong> The system proposes multiple theme labels per cluster; you select the ones you want and optionally run graded scoring.</p>
+            <p><strong>4) Outputs:</strong> It generates interactive visualizations plus downloadable JSON/CSV files based on your selected themes.</p>
           </div>
         </details>
       </div>
@@ -420,6 +635,123 @@
         <div id="results-list"></div>
         <div style="margin-top:1rem;">
           <button type="button" class="btn-secondary" id="download-json">Download Results (JSON)</button>
+        </div>
+      </div>
+
+      <div id="theme-area" style="display:none;">
+        <div class="summary" id="theme-summary"></div>
+        <div class="theme-grid">
+          <div class="theme-left-stack">
+            <div class="theme-card">
+              <div class="theme-viz-wrap">
+                <svg id="theme-viz" width="900" height="520" role="img" aria-label="Theme clusters"></svg>
+              </div>
+              <div style="margin-top:0.5rem; font-size:0.85rem; color: var(--gray-medium);">
+                Hover dots for bullets; hover theme labels for representative quotes/bullets.
+              </div>
+            </div>
+
+            <div class="theme-card" id="theme-downloads-pane">
+              <div id="theme-viz-status" class="theme-loading-msg" style="display:none;"></div>
+              <p id="theme-before-stats-msg" class="theme-loading-msg" style="font-size:0.9rem; line-height:1.5;">
+                Upon clicking <strong>Compute stats</strong>, downloads and detailed stats will appear below.
+              </p>
+              <div id="theme-downloads-wrap" style="display:none; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
+                <button type="button" class="btn-secondary" id="theme-download-json" style="width:auto;">Download Theme Run (JSON)</button>
+                <button type="button" class="btn-secondary" id="theme-download-points-csv" style="width:auto;">Download Points (CSV)</button>
+                <button type="button" class="btn-secondary" id="theme-download-themes-csv" style="width:auto;">Download Themes (CSV)</button>
+                <button type="button" class="btn-secondary" id="theme-download-theme-scores-csv" style="width:auto;">Download Excerpt/Bullet Theme Scores (CSV)</button>
+              </div>
+            </div>
+
+            <div id="theme-stats-section" style="display:none;">
+            <div class="theme-card" id="theme-overview-card">
+              <div style="font-weight:800;color:var(--navy);margin-bottom:0.25rem;">Concept overview</div>
+              <div style="font-size:0.85rem;color:var(--gray-medium); margin-bottom:0.5rem;">
+                Bars show number of interviews with at least one excerpt scoring ≥ 0.75 for that theme. “Outlier” means no themes meet the threshold.
+              </div>
+              <div style="width:100%; overflow:auto;">
+                <svg id="theme-overview" width="900" height="220" role="img" aria-label="Concept overview"></svg>
+              </div>
+            </div>
+
+            <div class="theme-card" id="theme-region-card">
+              <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                <div style="font-weight:800;color:var(--navy);margin-bottom:0.25rem;">Metadata distribution explorer</div>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+                  <div style="font-size:0.85rem;color:var(--gray-medium);">By metadata:</div>
+                  <select id="theme-explorer-field" style="min-width: 240px;">
+                    <option value="region_of_residence">region_of_residence</option>
+                    <option value="pizza_consumption">pizza_consumption</option>
+                    <option value="income">income</option>
+                    <option value="age">age</option>
+                    <option value="food_restrictions">food_restrictions</option>
+                  </select>
+                </div>
+              </div>
+              <div style="font-size:0.85rem;color:var(--gray-medium); margin-bottom:0.5rem;">
+                Click a dot to see example bullets for that slice. Dot size shows how many theme bullets fall in each category.
+              </div>
+              <div class="explorer-grid">
+                <div class="explorer-matrix-wrap">
+                  <svg id="region-explorer" width="900" height="360" role="img" aria-label="Metadata distribution explorer matrix"></svg>
+                </div>
+                <div class="explorer-details" id="region-explorer-details"></div>
+              </div>
+            </div>
+
+            <div class="theme-card" id="theme-score-table-card">
+              <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:baseline; justify-content:space-between;">
+                <div style="font-weight:800;color:var(--navy);margin-bottom:0.25rem;">Excerpt/Bullet theme scores table</div>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+                  <div style="font-size:0.85rem;color:var(--gray-medium);">Filter:</div>
+                  <select id="theme-score-filter" style="min-width: 220px;"></select>
+                </div>
+              </div>
+              <div id="theme-score-table-wrap" style="max-height: 420px; overflow: auto; border:1px solid var(--border); border-radius:6px; background:#fff;">
+                <table id="theme-score-table" style="width:100%; border-collapse: collapse; font-size: 0.85rem;"></table>
+              </div>
+            </div>
+
+            <div class="theme-card" id="theme-cards-card">
+              <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                <div style="font-weight:800;color:var(--navy);margin-bottom:0.25rem;">Theme details (cards)</div>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+                  <div style="font-size:0.85rem;color:var(--gray-medium);">Metadata on x-axis:</div>
+                  <select id="theme-meta-x" style="min-width: 240px;">
+                    <option value="region_of_residence">region_of_residence</option>
+                    <option value="state_of_residence">state_of_residence</option>
+                    <option value="pizza_consumption">pizza_consumption</option>
+                    <option value="income">income</option>
+                    <option value="age">age</option>
+                    <option value="food_restrictions">food_restrictions</option>
+                  </select>
+                </div>
+              </div>
+              <div id="theme-cards"></div>
+            </div>
+            </div>
+          </div>
+
+          <div class="theme-card">
+            <div style="font-weight:800;color:var(--navy);margin-bottom:0.35rem;">Theme bank</div>
+            <div style="font-size:0.85rem;color:var(--gray-medium);line-height:1.45;margin-bottom:0.5rem;">
+              Select themes to highlight their clusters. Then compute stats for the selected themes.
+            </div>
+            <input type="text" id="theme-bank-search" placeholder="Filter themes…" style="width:100%; padding:0.55rem; border:1px solid var(--border); border-radius:6px; margin-bottom:0.5rem;" />
+            <div id="theme-bank-status" style="font-size:0.85rem;color:var(--gray-medium); margin-bottom:0.5rem;"></div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+              <button type="button" class="btn-secondary" id="theme-bank-clear" style="width:auto;">Clear selection</button>
+              <button type="button" class="btn-primary" id="theme-bank-score" style="width:auto;">Compute stats</button>
+            </div>
+            <div id="theme-bank-list" style="max-height: 320px; overflow:auto; border:1px solid var(--border); border-radius:6px; background:#fff; padding:0.5rem;"></div>
+
+            <hr style="margin:0.9rem 0; border:0; border-top:1px solid var(--border);" />
+            <div style="font-weight:800;color:var(--navy);margin-bottom:0.35rem;">Pinned theme</div>
+            <div id="theme-details" style="font-size:0.9rem; line-height:1.6; color: var(--gray-dark);">
+              Click a theme in the bank (or a label) to pin details here.
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -451,6 +783,20 @@
     const API = window.location.origin;
     let lastPayload = null;
     let distChart = null;
+    let lastThemeExplore = null;    // exploration payload from /api/theme/explore
+    let lastTheme = null;           // scored payload (legacy /api/theme or /api/theme/score)
+    let lastThemeRequest = null;
+    let lastThemeSelection = [];    // selected theme_ids (exploration)
+    let themeVizState = null;       // { points, candidatesById, candidatesByCluster, clusterColor, dots, labelLayer, ... }
+    let themeTooltip = null;
+    let lastRegionExplorerSelection = null; // { cluster_id, field, value }
+    let themeIntervieweeField = null; // actual metadata field name (from server)
+
+    const THEME_LOCAL_KEY = 'theme_runs_v1';
+
+    function isThemeMode() {
+      return document.getElementById('theme-mode').checked === true;
+    }
 
     function showMsg(text, type = '') {
       const el = document.getElementById('messages');
@@ -503,8 +849,9 @@
       const allFields = j.fields || [];
       
       // Define field categories and order
-      const categoricalFields = ['region_of_residence', 'state_of_residence', 'food_restrictions', 'pizza_consumption'];
-      const continuousFields = ['income', 'age'];
+      // We bucket income/age into categorical groups, so treat them as categorical.
+      const categoricalFields = ['region_of_residence', 'state_of_residence', 'income', 'age', 'food_restrictions', 'pizza_consumption'];
+      const continuousFields = [];
       
       // Filter out participant_id and order fields
       const filtered = allFields.filter(f => {
@@ -555,14 +902,11 @@
     
     function getFieldType(fieldName) {
       const fieldLower = fieldName.toLowerCase().replace(/_/g, '').replace(/\s+/g, '');
-      const continuousFields = ['income', 'age'];
       const categoricalFields = ['regionofresidence', 'stateofresidence', 'foodrestrictions', 'pizzaconsumption'];
       
-      for (const cf of continuousFields) {
-        if (fieldLower.includes(cf) || fieldLower === cf) {
-          return 'continuous';
-        }
-      }
+      // Treat income/age as categorical buckets.
+      if (fieldLower === 'income' || fieldLower.includes('income')) return 'categorical';
+      if (fieldLower === 'age' || fieldLower.includes('age')) return 'categorical';
       
       for (const catf of categoricalFields) {
         if (fieldLower.includes(catf) || fieldLower === catf) {
@@ -574,11 +918,32 @@
       return 'categorical';
     }
 
+    function sortByFixedOrder(values, order) {
+      const want = order.map(String);
+      const pos = new Map(want.map((v, i) => [v, i]));
+      const out = [...(values || [])].map(String);
+      out.sort((a, b) => {
+        const pa = pos.has(a) ? pos.get(a) : 9999;
+        const pb = pos.has(b) ? pos.get(b) : 9999;
+        if (pa !== pb) return pa - pb;
+        return a.localeCompare(b);
+      });
+      return out;
+    }
+
     async function loadMetadataValues(field) {
       const r = await fetch(API + '/api/metadata/values?field=' + encodeURIComponent(field) + '&limit=100');
       if (!r.ok) return [];
       const j = await r.json();
-      return j.values || [];
+      let values = j.values || [];
+      const n = _normFieldName(field);
+      if (n.includes('income')) {
+        values = sortByFixedOrder(values, ['Under $25k', '$25k–$49k', '$50k–$74k', '$75k+']);
+      }
+      if (n === 'age' || n.includes('age')) {
+        values = sortByFixedOrder(values, ['18–29', '30–44', '45–59', '60+']);
+      }
+      return values;
     }
 
     let filterId = 0;
@@ -741,6 +1106,98 @@
       };
     }
 
+    function buildThemePayload(extraMetaFilters = null) {
+      const baseFilters = buildMetadataFilters() || {};
+      const dataset = getThemeDatasetFilters();
+      const datasetMeta = datasetFiltersAsMetadataFilters(dataset);
+      const merged = { ...baseFilters, ...datasetMeta, ...(extraMetaFilters || {}) };
+      return {
+        seed: document.getElementById('query').value.trim(),
+        metadata_filters: Object.keys(merged).length ? merged : null,
+        text_source: dataset.textSource || 'all',
+        max_docs: null,
+        n_bullets: 3,
+        bullet_words: '10-18',
+        max_themes: parseInt(document.getElementById('theme-max-themes').value, 10) || 12,
+        include_bullet_theme_scores: true,
+        score_batch_size: 6,
+        score_get_highlights: true,
+        max_points_for_scoring: null,
+        include_theme_summaries: true
+      };
+    }
+
+    function getSelectedOptions(selectEl) {
+      if (!selectEl) return [];
+      return [...selectEl.selectedOptions].map(o => o.value).filter(Boolean);
+    }
+
+    function _normFieldName(s) {
+      return String(s || '').toLowerCase().replace(/[_\\s]+/g, '');
+    }
+
+    async function detectIntervieweeField() {
+      try {
+        const r = await fetch(API + '/api/metadata/fields');
+        if (!r.ok) return null;
+        const j = await r.json();
+        const fields = j.fields || [];
+        const want = new Set(['participantid', 'participantnumber', 'respondentid']);
+        for (const f of fields) {
+          const n = _normFieldName(f);
+          if (want.has(n)) return f;
+        }
+        for (const f of fields) {
+          const n = _normFieldName(f);
+          if (n.includes('participant') && n !== 'id') return f;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    }
+
+    async function refreshIntervieweeOptions() {
+      const sel = document.getElementById('theme-filter-interviewee');
+      const help = document.getElementById('theme-interviewee-help');
+      if (!sel) return;
+      sel.innerHTML = '';
+      if (help) help.style.display = 'block';
+
+      if (!themeIntervieweeField) {
+        themeIntervieweeField = await detectIntervieweeField();
+      }
+      if (!themeIntervieweeField) {
+        if (help) help.innerHTML = 'Could not detect a participant_id field in metadata.';
+        return;
+      }
+
+      const values = await loadMetadataValues(themeIntervieweeField);
+      if (!values.length) {
+        if (help) help.innerHTML = 'No participant_id values found.';
+        return;
+      }
+      sel.innerHTML = values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+      if (help) help.innerHTML = `Using field <code>${escapeHtml(themeIntervieweeField)}</code>. Select interviewees to narrow the dataset; re-run Theme mode to apply.`;
+    }
+
+    function getThemeDatasetFilters() {
+      const sel = document.getElementById('theme-filter-interviewee');
+      const interviewees = sel ? getSelectedOptions(sel) : [];
+      const textSource = (document.getElementById('theme-text-source')?.value || 'all').trim();
+      return { interviewees, textSource };
+    }
+
+    function datasetFiltersAsMetadataFilters(filters) {
+      const out = {};
+      if (themeIntervieweeField && filters.interviewees && filters.interviewees.length) {
+        out[themeIntervieweeField] = { operator: "includes", value: filters.interviewees };
+      }
+      return out;
+    }
+
+    // Dot-filters are intentionally omitted for now.
+
     document.getElementById('search-type').addEventListener('change', () => {
       const wrap = document.getElementById('threshold-wrap');
       wrap.style.display = document.getElementById('search-type').value === 'fulltext' ? 'none' : 'block';
@@ -748,6 +1205,9 @@
     document.getElementById('search-type').dispatchEvent(new Event('change'));
 
     async function runSearch() {
+      if (isThemeMode()) {
+        return runTheme(false);
+      }
       const payload = buildSearchPayload();
       if (!payload.query) {
         showMsg('Enter a search query.', 'error');
@@ -783,6 +1243,109 @@
       }
     }
 
+    async function runTheme() {
+      const seed = document.getElementById('query').value.trim();
+      if (!seed) {
+        showMsg('Enter a steering term.', 'error');
+        return;
+      }
+      const payload = buildThemePayload(null);
+      // Exploration adds candidates_per_cluster; keep UI simple with a fixed default for now.
+      payload.candidates_per_cluster = 3;
+      lastThemeRequest = payload;
+      lastThemeSelection = [];
+      showMsg('Generating theme candidates… (this may take a bit)', 'loading');
+      try {
+        const r = await fetch(API + '/api/theme/explore', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!r.ok) {
+          const t = await r.text();
+          throw new Error(t || r.statusText);
+        }
+        const data = await r.json();
+        lastThemeExplore = (data && data.explore) ? data.explore : null;
+        lastTheme = null;
+        renderThemeExplore(lastThemeExplore, data && data.cached === true);
+        showMsg('');
+      } catch (e) {
+        showMsg('Theme mode failed: ' + (e.message || String(e)), 'error');
+      } finally {
+        const vizStatus = document.getElementById('theme-viz-status');
+        if (vizStatus) {
+          vizStatus.textContent = '';
+          vizStatus.style.display = 'none';
+        }
+      }
+    }
+
+    async function runThemeScore() {
+      if (!lastThemeExplore || !lastThemeExplore.explore_id) {
+        showMsg('Run theme exploration first.', 'error');
+        return;
+      }
+      const selected = Array.isArray(lastThemeSelection) ? lastThemeSelection.map(String).filter(Boolean) : [];
+      if (!selected.length) {
+        showMsg('Select one or more themes to score.', 'error');
+        return;
+      }
+
+      const vizStatus = document.getElementById('theme-viz-status');
+      if (vizStatus) {
+        vizStatus.textContent = 'Loading… (this may take some time)';
+        vizStatus.style.display = 'block';
+      }
+
+      const scoreMaxRaw = '';
+      const scoreBatch = 6;
+      const scoreSumm = true;
+
+      // Prefer sending full theme objects so edited criteria can be re-scored.
+      const selectedThemes = [];
+      const byId = (themeVizState && themeVizState.candidatesById) ? themeVizState.candidatesById : new Map();
+      for (const tid of selected) {
+        let t = byId.get(String(tid));
+        if (!t && lastThemeExplore && Array.isArray(lastThemeExplore.candidate_themes)) {
+          t = lastThemeExplore.candidate_themes.find(x => x && String(x.theme_id || '') === String(tid));
+        }
+        if (t) selectedThemes.push(t);
+      }
+
+      const payload = {
+        explore_id: String(lastThemeExplore.explore_id),
+        selected_themes: selectedThemes,
+        score_batch_size: scoreBatch,
+        max_points_for_scoring: scoreMaxRaw ? parseInt(scoreMaxRaw, 10) : null,
+        include_theme_summaries: scoreSumm
+      };
+
+      showMsg('Scoring selected themes… (this can take a bit)', 'loading');
+      try {
+        const r = await fetch(API + '/api/theme/score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!r.ok) {
+          const t = await r.text();
+          throw new Error(t || r.statusText);
+        }
+        const data = await r.json();
+        lastTheme = (data && data.theme) ? data.theme : null;
+        renderTheme(lastTheme, false);
+        showMsg('');
+      } catch (e) {
+        showMsg('Theme scoring failed: ' + (e.message || String(e)), 'error');
+      } finally {
+        if (vizStatus) {
+          vizStatus.textContent = '';
+          vizStatus.style.display = 'none';
+        }
+      }
+    }
+
     document.getElementById('search-btn').addEventListener('click', runSearch);
     document.getElementById('update-search').addEventListener('click', runSearch);
     document.getElementById('group-by-interviewee').addEventListener('change', () => {
@@ -791,11 +1354,15 @@
     document.getElementById('clear-btn').addEventListener('click', () => {
       document.getElementById('query').value = '';
       lastPayload = null;
+      lastTheme = null;
+      lastThemeRequest = null;
       document.getElementById('results-area').style.display = 'none';
+      document.getElementById('theme-area').style.display = 'none';
       showMsg('');
     });
 
     function renderResults(response) {
+      document.getElementById('theme-area').style.display = 'none';
       const area = document.getElementById('results-area');
       area.style.display = 'block';
       const resultsObj = response.results || {};
@@ -972,6 +1539,1597 @@
         });
       }
     }
+
+    function ensureThemeTooltip() {
+      if (themeTooltip) return themeTooltip;
+      themeTooltip = document.createElement('div');
+      themeTooltip.className = 'theme-tooltip';
+      document.body.appendChild(themeTooltip);
+      return themeTooltip;
+    }
+
+    function hideThemeTooltip() {
+      if (!themeTooltip) return;
+      themeTooltip.style.display = 'none';
+    }
+
+    function showThemeTooltip(html, x, y) {
+      const el = ensureThemeTooltip();
+      el.innerHTML = html;
+      el.style.display = 'block';
+      const pad = 12;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      // position after display so offsetWidth/Height are valid
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      let left = x + pad;
+      let top = y + pad;
+      if (left + w + pad > vw) left = Math.max(pad, x - w - pad);
+      if (top + h + pad > vh) top = Math.max(pad, y - h - pad);
+      el.style.left = left + 'px';
+      el.style.top = top + 'px';
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
+    }
+
+    function _setThemeVizSize(svgSel) {
+      const svgNode = svgSel && svgSel.node ? svgSel.node() : null;
+      if (!svgNode) return { width: 900, height: 520 };
+      const wrap = svgNode.closest ? svgNode.closest('.theme-viz-wrap') : null;
+      const w0 = wrap ? wrap.clientWidth : 0;
+      const width = Math.max(520, Math.floor(w0 || 900));
+      const height = Math.max(360, Math.floor(width * (520 / 900)));
+      svgSel.attr('width', width).attr('height', height);
+      return { width, height };
+    }
+
+    function normalizeRegionCategory(v) {
+      const s = (v == null) ? '' : String(v).trim().toLowerCase();
+      if (!s) return 'Other';
+      if (s.includes('midwest') || s.includes('mid-west') || s.includes('mid west')) return 'Midwest';
+      // Keep "west" check after "midwest"
+      if (s.includes('west')) return 'West';
+      if (s.includes('south')) return 'South';
+      if (s.includes('east')) return 'East';
+      return 'Other';
+    }
+
+    function _extractNumber(x) {
+      if (x == null) return null;
+      if (typeof x === 'number' && Number.isFinite(x)) return x;
+      const s = String(x);
+      const m = s.replace(/,/g, '').match(/-?\d+(\.\d+)?/);
+      if (!m) return null;
+      const v = parseFloat(m[0]);
+      return Number.isFinite(v) ? v : null;
+    }
+
+    function bucketIncome(v) {
+      if (v == null || v === '') return 'Other';
+      const s = String(v).trim().replace('—', '–');
+      if (['Under $25k', '$25k–$49k', '$50k–$74k', '$75k+'].includes(s)) return s;
+      const n = _extractNumber(s);
+      if (n == null) return 'Other';
+      // Heuristic: if it's like 25 or 49 for "k" scale, treat as thousands.
+      const nn = (n < 1000 && /k|\$|under|over|\+|–|-|to/i.test(s)) ? (n * 1000) : n;
+      if (nn < 25000) return 'Under $25k';
+      if (nn < 50000) return '$25k–$49k';
+      if (nn < 75000) return '$50k–$74k';
+      return '$75k+';
+    }
+
+    function bucketAge(v) {
+      if (v == null || v === '') return 'Other';
+      const s = String(v).trim().replace('—', '–');
+      if (['18–29', '30–44', '45–59', '60+'].includes(s)) return s;
+      const n = _extractNumber(s);
+      if (n == null) return 'Other';
+      if (n < 18) return 'Other';
+      if (n < 30) return '18–29';
+      if (n < 45) return '30–44';
+      if (n < 60) return '45–59';
+      return '60+';
+    }
+
+    function bucketMetaValue(field, v) {
+      if (v == null || v === '') return 'Other';
+      if (field === 'region_of_residence') return normalizeRegionCategory(v);
+      if (field === 'income') return bucketIncome(v);
+      if (field === 'age') return bucketAge(v);
+      return String(v);
+    }
+
+    function metaExplorerColumns(points, field) {
+      const f = String(field || 'region_of_residence');
+      if (f === 'region_of_residence') return ['West', 'East', 'South', 'Midwest', 'Other'];
+      if (f === 'income') return ['Under $25k', '$25k–$49k', '$50k–$74k', '$75k+', 'Other'];
+      if (f === 'age') return ['18–29', '30–44', '45–59', '60+', 'Other'];
+
+      const set = new Set();
+      for (const p of (points || [])) {
+        const md = p && p.metadata ? p.metadata : {};
+        const v = bucketMetaValue(f, md[f]);
+        set.add(v);
+      }
+      const arr = [...set].filter(Boolean).map(String).sort((a, b) => a.localeCompare(b));
+      return arr.includes('Other') ? arr : [...arr, 'Other'];
+    }
+
+    function updateRegionExplorerDetails(themeName, field, value, count, points) {
+      const el = document.getElementById('region-explorer-details');
+      if (!el) return;
+      const bullets = (points || [])
+        .filter(p => (p && p.bullet))
+        .slice(0, 8)
+        .map(p => `<li>${escapeHtml(p.bullet)}</li>`)
+        .join('');
+      el.innerHTML =
+        `<div class="title">${escapeHtml(themeName)} · ${escapeHtml(field)}: ${escapeHtml(value)}</div>` +
+        `<div><strong>Count:</strong> ${count}</div>` +
+        (bullets ? `<div style="margin-top:0.5rem;"><strong>Example bullets</strong><ul>${bullets}</ul></div>` : `<div style="margin-top:0.5rem;color:var(--gray-medium);">No bullets available for this slice.</div>`);
+    }
+
+    function renderRegionExplorer(theme) {
+      const svg = d3.select('#region-explorer');
+      if (svg.empty()) return;
+      svg.selectAll('*').remove();
+      if (!theme) return;
+
+      const pointsAll = theme.points || [];
+      const points = pointsAll;
+      const themes = (theme.themes || []).slice().sort((a,b) => (a.cluster_id ?? 0) - (b.cluster_id ?? 0));
+      const clusterIds = themes.map(t => t.cluster_id);
+      const clusterColor = d3.scaleOrdinal()
+        .domain(clusterIds.map(String))
+        .range(d3.schemeTableau10.concat(d3.schemeSet3).concat(d3.schemePaired));
+
+      const fieldSel = document.getElementById('theme-explorer-field');
+      const field = fieldSel ? String(fieldSel.value || 'region_of_residence') : 'region_of_residence';
+      const cols = metaExplorerColumns(pointsAll, field);
+      const rowLabelW = 240;
+      const colLabelH = 34;
+      const cell = 34;
+      const leftPad = 16;
+      const topPad = 12;
+      const rightPad = 16;
+      const bottomPad = 16;
+
+      const nRows = Math.max(1, themes.length);
+      const nCols = Math.max(1, cols.length);
+
+      const innerW = rowLabelW + nCols * cell;
+      const innerH = colLabelH + nRows * cell;
+      const width = innerW + leftPad + rightPad;
+      const height = innerH + topPad + bottomPad;
+
+      svg.attr('width', width).attr('height', height);
+
+      // Build lookup: cluster -> value -> { count, points }
+      const by = new Map(); // cluster_id -> value -> arr points
+      for (const p of points) {
+        const cid = p.cluster_id;
+        const value = bucketMetaValue(field, (p.metadata || {})[field]);
+        if (!by.has(cid)) by.set(cid, new Map());
+        const m = by.get(cid);
+        if (!m.has(value)) m.set(value, []);
+        m.get(value).push(p);
+      }
+
+      let maxCount = 0;
+      for (const t of themes) {
+        const m = by.get(t.cluster_id);
+        for (const c of cols) {
+          const cnt = (m && m.get(c)) ? m.get(c).length : 0;
+          if (cnt > maxCount) maxCount = cnt;
+        }
+      }
+      const rScale = d3.scaleSqrt().domain([0, Math.max(1, maxCount)]).range([0, 12]);
+
+      const g = svg.append('g').attr('transform', `translate(${leftPad},${topPad})`);
+
+      // Column labels
+      g.append('g')
+        .selectAll('text')
+        .data(cols)
+        .join('text')
+        .attr('x', (d, i) => rowLabelW + i * cell + cell / 2)
+        .attr('y', 22)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', 12)
+        .attr('font-weight', 700)
+        .attr('fill', '#1E3A5F')
+        .text(d => d);
+
+      // Row labels
+      g.append('g')
+        .selectAll('text')
+        .data(themes)
+        .join('text')
+        .attr('x', rowLabelW - 8)
+        .attr('y', (d, i) => colLabelH + i * cell + cell / 2 + 4)
+        .attr('text-anchor', 'end')
+        .attr('font-size', 12)
+        .attr('font-weight', 600)
+        .attr('fill', '#4A4A4A')
+        .text(d => d.name || `Cluster ${d.cluster_id}`);
+
+      // Light grid
+      g.append('g')
+        .selectAll('line.h')
+        .data(d3.range(nRows + 1))
+        .join('line')
+        .attr('x1', rowLabelW)
+        .attr('x2', rowLabelW + nCols * cell)
+        .attr('y1', i => colLabelH + i * cell)
+        .attr('y2', i => colLabelH + i * cell)
+        .attr('stroke', '#EAEAEA');
+      g.append('g')
+        .selectAll('line.v')
+        .data(d3.range(nCols + 1))
+        .join('line')
+        .attr('x1', i => rowLabelW + i * cell)
+        .attr('x2', i => rowLabelW + i * cell)
+        .attr('y1', colLabelH)
+        .attr('y2', colLabelH + nRows * cell)
+        .attr('stroke', '#EAEAEA');
+
+      const cells = [];
+      for (let r = 0; r < themes.length; r++) {
+        for (let c = 0; c < cols.length; c++) {
+          const t = themes[r];
+          const value = cols[c];
+          const arr = (by.get(t.cluster_id) && by.get(t.cluster_id).get(value)) ? by.get(t.cluster_id).get(value) : [];
+          cells.push({
+            row: r,
+            col: c,
+            cluster_id: t.cluster_id,
+            theme_name: t.name || `Cluster ${t.cluster_id}`,
+            field,
+            value,
+            count: arr.length,
+            points: arr
+          });
+        }
+      }
+
+      const tt = ensureThemeTooltip();
+
+      const dots = g.append('g')
+        .selectAll('circle')
+        .data(cells)
+        .join('circle')
+        .attr('cx', d => rowLabelW + d.col * cell + cell / 2)
+        .attr('cy', d => colLabelH + d.row * cell + cell / 2)
+        .attr('r', d => rScale(d.count))
+        .attr('fill', d => clusterColor(String(d.cluster_id)))
+        .attr('opacity', d => d.count ? 0.85 : 0.08)
+        .style('cursor', d => d.count ? 'pointer' : 'default')
+        .attr('stroke', d => (lastRegionExplorerSelection && lastRegionExplorerSelection.cluster_id === d.cluster_id && lastRegionExplorerSelection.field === d.field && lastRegionExplorerSelection.value === d.value) ? '#111' : 'none')
+        .attr('stroke-width', 1.5)
+        .on('pointerenter', (event, d) => {
+          if (!d.count) return;
+          const example = d.points && d.points[0] ? d.points[0].bullet : '';
+          const html =
+            `<div class="tt-title">${escapeHtml(d.theme_name)} · ${escapeHtml(d.field)}: ${escapeHtml(d.value)}</div>` +
+            `<div><strong>Count:</strong> ${d.count}</div>` +
+            (example ? `<div style="margin-top:0.35rem;"><strong>Example:</strong> ${escapeHtml(example)}</div>` : '');
+          showThemeTooltip(html, event.clientX, event.clientY);
+        })
+        .on('pointermove', (event) => {
+          if (!tt || tt.style.display === 'none') return;
+          showThemeTooltip(tt.innerHTML, event.clientX, event.clientY);
+        })
+        .on('pointerleave', () => hideThemeTooltip())
+        .on('click', (event, d) => {
+          if (!d.count) return;
+          lastRegionExplorerSelection = { cluster_id: d.cluster_id, field: d.field, value: d.value };
+          updateRegionExplorerDetails(d.theme_name, d.field, d.value, d.count, d.points);
+          renderRegionExplorer(theme); // redraw to update selection stroke
+        });
+
+      // If we already have a selection, refresh details if it still exists
+      if (lastRegionExplorerSelection) {
+        const found = cells.find(x =>
+          x.cluster_id === lastRegionExplorerSelection.cluster_id &&
+          x.field === lastRegionExplorerSelection.field &&
+          x.value === lastRegionExplorerSelection.value
+        );
+        if (found) {
+          updateRegionExplorerDetails(found.theme_name, found.field, found.value, found.count, found.points);
+        }
+      }
+    }
+
+    function updateRegionExplorer() {
+      if (!lastTheme) return;
+      renderRegionExplorer(lastTheme);
+    }
+
+    // Re-render explorer when the chosen metadata field changes
+    const _explorerFieldSel = document.getElementById('theme-explorer-field');
+    if (_explorerFieldSel) {
+      _explorerFieldSel.addEventListener('change', () => {
+        // Reset selection when switching dimensions
+        lastRegionExplorerSelection = null;
+        const details = document.getElementById('region-explorer-details');
+        if (details) details.innerHTML = '';
+        updateRegionExplorer();
+      });
+    }
+
+    function _getScoreRows(theme) {
+      const s = (theme && theme.scores && Array.isArray(theme.scores.bullet_theme_scores)) ? theme.scores.bullet_theme_scores : null;
+      return s && s.length ? s : [];
+    }
+
+    function _pillClass(score) {
+      const s = typeof score === 'number' ? score : parseFloat(score);
+      if (!Number.isFinite(s)) return 'pill-low';
+      if (s >= 0.75) return 'pill-high';
+      if (s >= 0.5) return 'pill-mid';
+      return 'pill-low';
+    }
+
+    function renderScoreTable(theme) {
+      const table = document.getElementById('theme-score-table');
+      const filterSel = document.getElementById('theme-score-filter');
+      if (!table || !filterSel) return;
+
+      const rows = _getScoreRows(theme);
+      const themes = (theme && theme.themes) ? theme.themes : [];
+      const points = (theme && theme.points) ? theme.points : [];
+
+      // Map bullet_id -> metadata (best-effort)
+      const metaByBulletId = new Map();
+      for (const p of points) {
+        if (!p || !p.bullet_id) continue;
+        metaByBulletId.set(String(p.bullet_id), p.metadata || {});
+      }
+      const META_COLS = ['participant_id', 'region_of_residence', 'pizza_consumption', 'income', 'age', 'food_restrictions'];
+
+      // Populate filter dropdown
+      const opts = [{ id: '__all__', label: 'All themes' }]
+        .concat(themes.map(t => ({ id: String(_asThemeId(t)), label: (t.name || `Theme ${t.cluster_id}`) })));
+      filterSel.innerHTML = opts.map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(o.label)}</option>`).join('');
+
+      const render = () => {
+        const v = filterSel.value || '__all__';
+        const filtered = (v === '__all__') ? rows : rows.filter(r => String(r.concept_id) === String(v));
+        const sorted = filtered.slice().sort((a,b) => (parseFloat(b.score)||0) - (parseFloat(a.score)||0));
+        const head = ['doc_id','concept_name','score','highlight','rationale','text'].concat(META_COLS);
+        table.innerHTML =
+          '<thead><tr>' + head.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>' +
+          '<tbody>' + sorted.slice(0, 500).map(r => {
+            const sc = (typeof r.score === 'number') ? r.score : parseFloat(r.score);
+            const scoreLabel = Number.isFinite(sc) ? sc.toFixed(2) : '';
+            const conceptName = r.concept_name || '';
+            const md = metaByBulletId.get(String(r.bullet_id || '')) || {};
+            return '<tr>' +
+              `<td>${escapeHtml(r.doc_id ?? '')}</td>` +
+              `<td>${escapeHtml(conceptName)}</td>` +
+              `<td><span class="pill ${_pillClass(sc)}">${escapeHtml(scoreLabel)}</span></td>` +
+              `<td>${escapeHtml(r.highlight ?? '')}</td>` +
+              `<td>${escapeHtml(r.rationale ?? '')}</td>` +
+              `<td>${escapeHtml(r.text ?? '')}</td>` +
+              META_COLS.map(k => `<td>${escapeHtml(bucketMetaValue(k, md[k]) === 'Other' ? (md[k] ?? '') : bucketMetaValue(k, md[k]))}</td>`).join('') +
+            '</tr>';
+          }).join('') +
+          '</tbody>';
+      };
+      filterSel.onchange = render;
+      render();
+    }
+
+    function renderConceptOverview(theme) {
+      const svg = d3.select('#theme-overview');
+      if (svg.empty()) return;
+      svg.selectAll('*').remove();
+      const rows = _getScoreRows(theme);
+      const themes = (theme && theme.themes) ? theme.themes : [];
+      if (!rows.length || !themes.length) {
+        svg.append('text').attr('x', 10).attr('y', 20).attr('fill', '#6B6B6B').attr('font-size', 12)
+          .text('No graded scores available (enable LLM scoring and re-run).');
+        return;
+      }
+
+      const THR = 0.75;
+      const allDocIds = new Set(rows.map(r => String(r.doc_id)));
+      const byConcept = new Map(); // concept_id -> Set(doc_id)
+      for (const t of themes) byConcept.set(String(_asThemeId(t)), new Set());
+
+      for (const r of rows) {
+        const s = parseFloat(r.score) || 0;
+        if (s >= THR) {
+          const cid = String(r.concept_id);
+          if (!byConcept.has(cid)) byConcept.set(cid, new Set());
+          byConcept.get(cid).add(String(r.doc_id));
+        }
+      }
+
+      const conceptData = themes.map(t => ({
+        id: String(_asThemeId(t)),
+        name: t.name || `Theme ${t.cluster_id}`,
+        n: byConcept.get(String(_asThemeId(t))) ? byConcept.get(String(_asThemeId(t))).size : 0
+      }));
+
+      // Outliers: docs with no concept hits
+      const hitDocs = new Set();
+      conceptData.forEach(c => {
+        const s = byConcept.get(c.id);
+        if (s) s.forEach(d => hitDocs.add(d));
+      });
+      const outliers = [...allDocIds].filter(d => !hitDocs.has(d)).length;
+
+      const data = conceptData.concat([{ id: 'outlier', name: 'Outlier', n: outliers }]);
+
+      const width = +svg.attr('width');
+      const height = +svg.attr('height');
+      const margin = { top: 16, right: 12, bottom: 80, left: 52 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+
+      const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+      const x = d3.scaleBand().domain(data.map(d => d.name)).range([0, innerW]).padding(0.2);
+      const y = d3.scaleLinear().domain([0, d3.max(data, d => d.n) || 1]).nice().range([innerH, 0]);
+
+      g.append('g').call(d3.axisLeft(y).ticks(4));
+      g.append('g').attr('transform', `translate(0,${innerH})`)
+        .call(d3.axisBottom(x))
+        .selectAll('text')
+        .attr('transform', 'rotate(-35)')
+        .style('text-anchor', 'end');
+
+      const tt = ensureThemeTooltip();
+      g.selectAll('rect')
+        .data(data)
+        .join('rect')
+        .attr('x', d => x(d.name))
+        .attr('y', d => y(d.n))
+        .attr('width', x.bandwidth())
+        .attr('height', d => innerH - y(d.n))
+        .attr('fill', d => d.name === 'Outlier' ? '#6B6B6B' : '#1E3A5F')
+        .attr('opacity', 0.75)
+        .style('cursor', 'default')
+        .on('pointerenter', (event, d) => {
+          const html =
+            `<div class="tt-title">Concept overview</div>` +
+            `<div><strong>${escapeHtml(d.name)}:</strong> ${escapeHtml(String(d.n))} interviews</div>`;
+          showThemeTooltip(html, event.clientX, event.clientY);
+        })
+        .on('pointermove', (event) => {
+          if (!tt || tt.style.display === 'none') return;
+          showThemeTooltip(tt.innerHTML, event.clientX, event.clientY);
+        })
+        .on('pointerleave', () => hideThemeTooltip());
+    }
+
+    function renderThemeCards(theme) {
+      const container = document.getElementById('theme-cards');
+      const metaSel = document.getElementById('theme-meta-x');
+      if (!container || !metaSel) return;
+
+      const rows = _getScoreRows(theme);
+      const themes = (theme && theme.themes) ? theme.themes : [];
+      const points = (theme && theme.points) ? theme.points : [];
+      const summaries = (theme && theme.scores && theme.scores.concept_summaries) ? theme.scores.concept_summaries : {};
+      const THR = 0.75;
+
+      // Map doc_id -> metadata (best-effort: first point per doc)
+      const docMeta = new Map();
+      for (const p of points) {
+        if (!p || p.doc_id == null) continue;
+        const k = String(p.doc_id);
+        if (!docMeta.has(k)) docMeta.set(k, p.metadata || {});
+      }
+
+      function drawMiniBar(svgEl, categories, counts, color, yMax, titlePrefix) {
+        const svg = d3.select(svgEl);
+        svg.selectAll('*').remove();
+        const data = (categories || []).map(k => ({ k, v: (counts && counts[k]) ? counts[k] : 0 }));
+        const width = +svg.attr('width') || 520;
+        const height = +svg.attr('height') || 180;
+        const margin = { top: 10, right: 10, bottom: 56, left: 42 };
+        const innerW = width - margin.left - margin.right;
+        const innerH = height - margin.top - margin.bottom;
+        const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+        const x = d3.scaleBand().domain(data.map(d=>d.k)).range([0, innerW]).padding(0.2);
+        const y = d3.scaleLinear().domain([0, Math.max(1, yMax || 1)]).nice().range([innerH, 0]);
+
+        g.append('g').call(d3.axisLeft(y).ticks(3));
+        g.append('g').attr('transform', `translate(0,${innerH})`)
+          .call(d3.axisBottom(x))
+          .selectAll('text')
+          .attr('transform', 'rotate(-35)')
+          .style('text-anchor', 'end');
+
+        const tt = ensureThemeTooltip();
+        g.selectAll('rect').data(data).join('rect')
+          .attr('x', d => x(d.k))
+          .attr('y', d => y(d.v))
+          .attr('width', x.bandwidth())
+          .attr('height', d => innerH - y(d.v))
+          .attr('fill', color)
+          .attr('opacity', 0.75)
+          .style('cursor', 'default')
+          .on('pointerenter', (event, d) => {
+            const html =
+              `<div class="tt-title">${escapeHtml(titlePrefix || '')}</div>` +
+              `<div><strong>${escapeHtml(String(d.k))}:</strong> ${escapeHtml(String(d.v))} interviews</div>`;
+            showThemeTooltip(html, event.clientX, event.clientY);
+          })
+          .on('pointermove', (event) => {
+            if (!tt || tt.style.display === 'none') return;
+            showThemeTooltip(tt.innerHTML, event.clientX, event.clientY);
+          })
+          .on('pointerleave', () => hideThemeTooltip());
+      }
+
+      function render() {
+        const field = metaSel.value || 'region_of_residence';
+        const categories = metaExplorerColumns(points, field);
+
+        // Precompute counts per theme + global max so all charts share a y scale.
+        const countsByCid = new Map();
+        let globalYMax = 1;
+        for (const t of themes) {
+          const cid = String(_asThemeId(t));
+          const hitRows = rows.filter(r => String(r.concept_id) === cid && (parseFloat(r.score) || 0) >= THR);
+          const docIds = Array.from(new Set(hitRows.map(r => String(r.doc_id))));
+          const counts = {};
+          for (const k of categories) counts[k] = 0;
+          for (const did of docIds) {
+            const md = docMeta.get(String(did)) || {};
+            const v = bucketMetaValue(field, md[field]);
+            counts[v] = (counts[v] || 0) + 1;
+          }
+          countsByCid.set(cid, counts);
+          for (const k of categories) {
+            globalYMax = Math.max(globalYMax, counts[k] || 0);
+          }
+        }
+
+        container.innerHTML = themes.map(t => {
+          const cid = String(_asThemeId(t));
+          const name = t.name || `Theme ${cid}`;
+          const prompt = t.prompt || '';
+          const summary = summaries && summaries[cid] ? summaries[cid] : '';
+          const hitRows = rows.filter(r => String(r.concept_id) === cid && (parseFloat(r.score) || 0) >= THR);
+          const docIds = Array.from(new Set(hitRows.map(r => String(r.doc_id))));
+          const nMatches = docIds.length;
+          const reps = hitRows.slice().sort((a,b)=>(parseFloat(b.score)||0)-(parseFloat(a.score)||0)).slice(0,3);
+          const repLis = reps.map(r => `<li>${escapeHtml((r.highlight || r.text || '').trim())}</li>`).join('');
+
+          const counts = countsByCid.get(cid) || {};
+          const chartId = `mini_${cid}`.replace(/[^a-zA-Z0-9_]/g,'_');
+
+          // Chart will be drawn after DOM insert
+          return `
+            <div class="concept-card" data-cid="${escapeHtml(cid)}">
+              <div class="title">${escapeHtml(name)}</div>
+              <div class="muted"><strong>Criteria:</strong> ${escapeHtml(prompt)}</div>
+              ${summary ? `<div class="section"><strong>Summary:</strong> ${escapeHtml(summary)}</div>` : ''}
+              <div class="section"><strong>Concept matches:</strong> ${nMatches} interviews</div>
+              <div class="section"><strong>Representative examples:</strong>${repLis ? `<ul>${repLis}</ul>` : `<div class="muted">No matches ≥ 0.75 yet.</div>`}</div>
+              <div class="section"><strong>${escapeHtml(field)}</strong> distribution</div>
+              <div class="mini-chart"><svg id="${escapeHtml(chartId)}" width="520" height="180" style="width:100%; height:180px;" role="img" aria-label="Metadata distribution"></svg></div>
+            </div>
+          `;
+        }).join('');
+
+        // Draw charts
+        for (const t of themes) {
+          const cid = String(_asThemeId(t));
+          const chartId = `mini_${cid}`.replace(/[^a-zA-Z0-9_]/g,'_');
+          const svgEl = document.getElementById(chartId);
+          if (!svgEl) continue;
+          const field = metaSel.value || 'region_of_residence';
+          const cats = metaExplorerColumns(points, field);
+          const counts = countsByCid.get(cid) || {};
+          drawMiniBar(svgEl, cats, counts, '#1E3A5F', globalYMax, `${field} distribution`);
+        }
+      }
+
+      metaSel.onchange = render;
+      render();
+    }
+
+    function _asThemeId(t) {
+      return String((t && (t.theme_id ?? t.cluster_id)) ?? '').trim();
+    }
+
+    function _candidateText(t) {
+      const parts = [];
+      if (t && t.name) parts.push(String(t.name));
+      if (t && t.prompt) parts.push(String(t.prompt));
+      return parts.join(' ').toLowerCase();
+    }
+
+    function _groupCandidatesByCluster(candidates) {
+      const by = new Map(); // cluster_id -> [candidates...]
+      (candidates || []).forEach(t => {
+        if (!t || t.cluster_id == null) return;
+        const cid = String(t.cluster_id);
+        if (!by.has(cid)) by.set(cid, []);
+        by.get(cid).push(t);
+      });
+      return by;
+    }
+
+    function _selectedThemeIdSet() {
+      return new Set((lastThemeSelection || []).map(x => String(x)));
+    }
+
+    function _clamp(v, lo, hi) {
+      return Math.max(lo, Math.min(hi, v));
+    }
+
+    function _clusterCentroidFromPoints(points, clusterId) {
+      const cid = String(clusterId);
+      let sx = 0, sy = 0, n = 0;
+      for (const p of (points || [])) {
+        if (!p) continue;
+        if (String(p.cluster_id) !== cid) continue;
+        if (typeof p.x !== 'number' || typeof p.y !== 'number') continue;
+        if (Number.isNaN(p.x) || Number.isNaN(p.y)) continue;
+        sx += p.x;
+        sy += p.y;
+        n += 1;
+      }
+      if (!n) return null;
+      return { x: sx / n, y: sy / n };
+    }
+
+    function _layoutClusterLabels({ items, getClusterId, getCentroid, xScale, yScale, innerW, innerH }) {
+      const spacing = 14; // px between stacked labels
+      const pad = 12;     // keep labels within plot bounds
+      const byCluster = new Map();
+      for (const it of (items || [])) {
+        const cid = String(getClusterId(it));
+        if (!cid) continue;
+        if (!byCluster.has(cid)) byCluster.set(cid, []);
+        byCluster.get(cid).push(it);
+      }
+
+      const out = [];
+      for (const [cid, arr] of byCluster.entries()) {
+        const c = getCentroid(cid, arr);
+        if (!c || c.x == null || c.y == null) continue;
+        const baseX = _clamp(xScale(c.x), pad, Math.max(pad, innerW - pad));
+        const baseY = _clamp(yScale(c.y), pad, Math.max(pad, innerH - pad));
+
+        const n = arr.length;
+        const dy0 = -((n - 1) * spacing) / 2;
+        const ys0 = arr.map((_, i) => baseY + dy0 + i * spacing);
+        let shiftY = 0;
+        const minY = Math.min(...ys0);
+        const maxY = Math.max(...ys0);
+        if (minY < pad) shiftY = pad - minY;
+        if (maxY + shiftY > innerH - pad) shiftY += (innerH - pad) - (maxY + shiftY);
+
+        arr.forEach((t, i) => {
+          out.push({
+            _cluster_id: cid,
+            _x_px: baseX,
+            _y_px: ys0[i] + shiftY,
+            _i: i,
+            _n: n,
+            item: t,
+          });
+        });
+      }
+      return out;
+    }
+
+    function renderExploreLabels() {
+      if (!themeVizState || themeVizState.mode !== 'explore') return;
+      const layer = themeVizState.labelLayer;
+      if (!layer) return;
+
+      const sel = _selectedThemeIdSet();
+      const hasSel = sel.size > 0;
+      const points = themeVizState.points || [];
+      const candidatesById = themeVizState.candidatesById;
+      const candidatesByCluster = themeVizState.candidatesByCluster;
+
+      // Which labels to show:
+      // - If user selected themes: show ALL selected themes (including multiple per cluster)
+      // - Else: show one label per cluster (the "chosen" candidate)
+      const labelItems = [];
+      if (hasSel) {
+        for (const tid of sel) {
+          const t = candidatesById ? candidatesById.get(String(tid)) : null;
+          if (t) labelItems.push(t);
+        }
+      } else {
+        for (const [cid] of (candidatesByCluster || new Map()).entries()) {
+          const t = _chosenCandidateForCluster(cid);
+          if (t) labelItems.push(t);
+        }
+      }
+
+      const data = _layoutClusterLabels({
+        items: labelItems,
+        getClusterId: (t) => (t && t.cluster_id != null) ? t.cluster_id : '',
+        getCentroid: (cid, arr) => {
+          const t0 = arr && arr[0] ? arr[0] : null;
+          if (t0 && t0.centroid && t0.centroid.x != null && t0.centroid.y != null) return t0.centroid;
+          return _clusterCentroidFromPoints(points, cid);
+        },
+        xScale: themeVizState.xScale,
+        yScale: themeVizState.yScale,
+        innerW: themeVizState.innerW,
+        innerH: themeVizState.innerH,
+      });
+
+      const tt = ensureThemeTooltip();
+      layer.selectAll('text')
+        .data(data, d => String((d.item && (d.item.theme_id ?? d.item.cluster_id)) ?? '') + '_' + d._i)
+        .join('text')
+        .attr('x', d => d._x_px)
+        .attr('y', d => d._y_px)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', 12)
+        .attr('font-weight', 700)
+        .attr('fill', '#1E3A5F')
+        .style('cursor', 'pointer')
+        .style('paint-order', 'stroke')
+        .style('stroke', '#FFFFFF')
+        .style('stroke-width', 4)
+        .text(d => (d.item && d.item.name) ? String(d.item.name) : `Cluster ${d._cluster_id}`)
+        .on('pointerenter', (event, d) => {
+          const t = d.item;
+          if (!t) return;
+          const bullets = (t.representative_bullets || []).map(b => `<li>${escapeHtml(b)}</li>`).join('');
+          const quotes = (t.representative_quotes || []).map(q => `<li>"${escapeHtml(q)}"</li>`).join('');
+          const html =
+            `<div class="tt-title">${escapeHtml(t.name || '')}</div>` +
+            (t.prompt ? `<div><strong>Criteria:</strong> ${escapeHtml(t.prompt)}</div>` : '') +
+            (bullets ? `<div style="margin-top:0.35rem;"><strong>Representative bullets:</strong><ul>${bullets}</ul></div>` : '') +
+            (quotes ? `<div style="margin-top:0.35rem;"><strong>Representative quotes:</strong><ul>${quotes}</ul></div>` : '');
+          showThemeTooltip(html, event.clientX, event.clientY);
+        })
+        .on('pointermove', (event) => {
+          if (!tt || tt.style.display === 'none') return;
+          showThemeTooltip(tt.innerHTML, event.clientX, event.clientY);
+        })
+        .on('pointerleave', () => hideThemeTooltip())
+        .on('click', (event, d) => {
+          pinThemeDetails(d.item);
+        });
+    }
+
+    function _activeClusterIdSetFromSelection() {
+      const out = new Set();
+      if (!themeVizState || themeVizState.mode !== 'explore') return out;
+      const selected = _selectedThemeIdSet();
+      for (const tid of selected) {
+        const t = themeVizState.candidatesById.get(String(tid));
+        if (t && t.cluster_id != null) out.add(String(t.cluster_id));
+      }
+      return out;
+    }
+
+    function _chosenCandidateForCluster(clusterId) {
+      if (!themeVizState || themeVizState.mode !== 'explore') return null;
+      const cid = String(clusterId);
+      const byCluster = themeVizState.candidatesByCluster;
+      const all = byCluster.get(cid) || [];
+      if (!all.length) return null;
+
+      // If something is selected for this cluster, prefer the first selected candidate
+      const selected = _selectedThemeIdSet();
+      for (const t of all) {
+        const tid = String(t.theme_id || '');
+        if (tid && selected.has(tid)) return t;
+      }
+      // Otherwise fall back to the first candidate
+      return all[0];
+    }
+
+    function updateThemeBankUI() {
+      const statusEl = document.getElementById('theme-bank-status');
+      const clearBtn = document.getElementById('theme-bank-clear');
+      const scoreBtn = document.getElementById('theme-bank-score');
+      const selectedCount = (lastThemeSelection || []).length;
+      if (statusEl) {
+        statusEl.innerHTML = selectedCount
+          ? `<strong>${selectedCount}</strong> selected`
+          : 'No themes selected yet.';
+      }
+      if (clearBtn) clearBtn.disabled = selectedCount === 0;
+      if (scoreBtn) scoreBtn.disabled = selectedCount === 0;
+    }
+
+    function updateExploreVizSelection() {
+      if (!themeVizState || themeVizState.mode !== 'explore') return;
+      const activeClusters = _activeClusterIdSetFromSelection();
+      const hasSel = activeClusters.size > 0;
+
+      // Slightly darker + more visible greys for de-emphasized points (incl. outliers).
+      const THEME_POINT_GREY = '#8C8C8C';
+      const THEME_DIM_OPACITY = 0.22;
+      const THEME_OUTLIER_OPACITY = 0.35;
+      const THEME_OUTLIER_DIM_OPACITY = 0.18;
+
+      // Dots: grey-out clusters not affiliated with any selected theme
+      themeVizState.dots
+        .attr('fill', p => {
+          const cid = String(p.cluster_id);
+          if (cid === '-1') return THEME_POINT_GREY;
+          if (!hasSel) return themeVizState.clusterColor(cid);
+          return activeClusters.has(cid) ? themeVizState.clusterColor(cid) : THEME_POINT_GREY;
+        })
+        .attr('opacity', p => {
+          const cid = String(p.cluster_id);
+          if (cid === '-1') return hasSel ? THEME_OUTLIER_DIM_OPACITY : THEME_OUTLIER_OPACITY;
+          if (!hasSel) return 0.75;
+          return activeClusters.has(cid) ? 0.85 : THEME_DIM_OPACITY;
+        });
+      // Labels: when selected, show ALL selected themes (stacked per cluster).
+      // Otherwise show one label per cluster (the "chosen" candidate).
+      renderExploreLabels();
+    }
+
+    function pinThemeDetails(t) {
+      const el = document.getElementById('theme-details');
+      if (!el) return;
+      if (!t) {
+        el.innerHTML = 'Click a theme in the bank (or a label) to pin details here.';
+        return;
+      }
+      const tid = String(t.theme_id || '');
+      const bullets = (t.representative_bullets || []).map(b => `<li>${escapeHtml(b)}</li>`).join('');
+      const quotes = (t.representative_quotes || []).map(q => `<li>"${escapeHtml(q)}"</li>`).join('');
+      el.innerHTML =
+        `<div style="font-weight:800;color:var(--navy);font-size:1rem;margin-bottom:0.25rem;">${escapeHtml(t.name || '')}</div>` +
+        `<div style="color:var(--gray-medium); font-size:0.85rem; margin-bottom:0.5rem;">Cluster ${escapeHtml(t.cluster_id ?? '')} · n=${escapeHtml(t.n_points ?? '')}</div>` +
+        `<div style="margin-bottom:0.5rem;"><strong>Criteria:</strong> ${escapeHtml(t.prompt || '')}</div>` +
+        (tid ? (
+          `<div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.6rem;">` +
+            `<button type="button" class="btn-secondary" id="theme-prompt-edit" data-theme-id="${escapeHtml(tid)}" style="width:auto;">Edit criteria</button>` +
+          `</div>` +
+          `<div id="theme-prompt-editor" style="display:none; margin-bottom:0.75rem;">` +
+            `<textarea data-theme-id="${escapeHtml(tid)}" style="width:100%; min-height: 120px; padding:0.6rem; border:1px solid var(--border); border-radius:6px; font-size:0.9rem; line-height:1.4;"></textarea>` +
+            `<div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem;">` +
+              `<button type="button" class="btn-primary" id="theme-prompt-save" data-theme-id="${escapeHtml(tid)}" style="width:auto;">Save criteria</button>` +
+              `<button type="button" class="btn-secondary" id="theme-prompt-cancel" data-theme-id="${escapeHtml(tid)}" style="width:auto;">Cancel</button>` +
+            `</div>` +
+          `</div>`
+        ) : '') +
+        (bullets ? `<div><strong>Representative bullets</strong><ul>${bullets}</ul></div>` : '') +
+        (quotes ? `<div style="margin-top:0.5rem;"><strong>Representative quotes</strong><ul>${quotes}</ul></div>` : '');
+
+      // Wire edit UI (single pinned card, so ID-based handlers are fine)
+      const editBtn = el.querySelector('#theme-prompt-edit');
+      const saveBtn = el.querySelector('#theme-prompt-save');
+      const cancelBtn = el.querySelector('#theme-prompt-cancel');
+      const editor = el.querySelector('#theme-prompt-editor');
+      const ta = el.querySelector('textarea[data-theme-id]');
+
+      if (ta) ta.value = String(t.prompt || '');
+
+      if (editBtn && editor) {
+        editBtn.onclick = () => { editor.style.display = (editor.style.display === 'none' || !editor.style.display) ? 'block' : 'none'; };
+      }
+      if (cancelBtn && editor) {
+        cancelBtn.onclick = () => {
+          if (ta) ta.value = String(t.prompt || '');
+          editor.style.display = 'none';
+        };
+      }
+      if (saveBtn && editor) {
+        saveBtn.onclick = () => {
+          const newPrompt = ta ? String(ta.value || '').trim() : '';
+          t.prompt = newPrompt;
+          if (themeVizState && themeVizState.candidatesById && tid) {
+            const tt = themeVizState.candidatesById.get(tid);
+            if (tt) tt.prompt = newPrompt;
+          }
+          if (lastThemeExplore && Array.isArray(lastThemeExplore.candidate_themes) && tid) {
+            for (const c of lastThemeExplore.candidate_themes) {
+              if (c && String(c.theme_id || '') === tid) {
+                c.prompt = newPrompt;
+                break;
+              }
+            }
+          }
+          editor.style.display = 'none';
+          renderThemeBank(lastThemeExplore);
+          updateExploreVizSelection();
+          pinThemeDetails(t);
+        };
+      }
+    }
+
+    function renderThemeBank(explore) {
+      const listEl = document.getElementById('theme-bank-list');
+      const searchEl = document.getElementById('theme-bank-search');
+      if (!listEl || !searchEl) return;
+
+      const candidates = (explore && explore.candidate_themes) ? explore.candidate_themes : [];
+      const sorted = candidates.slice().sort((a, b) => {
+        const ca = (a && a.cluster_id != null) ? Number(a.cluster_id) : 999999;
+        const cb = (b && b.cluster_id != null) ? Number(b.cluster_id) : 999999;
+        if (ca !== cb) return ca - cb;
+        const na = (a && a.name) ? String(a.name) : '';
+        const nb = (b && b.name) ? String(b.name) : '';
+        return na.localeCompare(nb);
+      });
+
+      const selected = _selectedThemeIdSet();
+      listEl.innerHTML = sorted.map(t => {
+        const tid = String(t.theme_id || '');
+        const checked = tid && selected.has(tid);
+        const prompt = t.prompt ? `<div style="color:var(--gray-medium); font-size:0.82rem; line-height:1.4; margin-top:0.15rem;"><strong>Criteria:</strong> ${escapeHtml(t.prompt)}</div>` : '';
+        return `
+          <div class="theme-bank-item" data-theme-id="${escapeHtml(tid)}" style="padding:0.45rem 0.35rem; border-bottom:1px solid #EFEFEF;">
+            <label style="display:flex; gap:0.5rem; align-items:flex-start; cursor:pointer;">
+              <input type="checkbox" data-theme-id="${escapeHtml(tid)}" ${checked ? 'checked' : ''} style="margin-top:0.2rem;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;color:var(--navy);">${escapeHtml(t.name || ('Theme ' + tid))}</div>
+                <div style="color:var(--gray-medium); font-size:0.82rem;">Cluster ${escapeHtml(t.cluster_id ?? '')} · n=${escapeHtml(t.n_points ?? '')}</div>
+                ${prompt}
+              </div>
+            </label>
+          </div>
+        `;
+      }).join('');
+
+      const applyFilter = () => {
+        const q = (searchEl.value || '').trim().toLowerCase();
+        const items = listEl.querySelectorAll('.theme-bank-item');
+        for (const it of items) {
+          const tid = it.getAttribute('data-theme-id') || '';
+          const t = themeVizState && themeVizState.candidatesById ? themeVizState.candidatesById.get(tid) : null;
+          const ok = !q || (t && _candidateText(t).includes(q));
+          it.style.display = ok ? '' : 'none';
+        }
+      };
+
+      searchEl.oninput = applyFilter;
+      applyFilter();
+
+      listEl.onchange = (e) => {
+        const cb = e.target && e.target.matches && e.target.matches('input[type="checkbox"][data-theme-id]') ? e.target : null;
+        if (!cb) return;
+        const tid = String(cb.getAttribute('data-theme-id') || '').trim();
+        const sel = _selectedThemeIdSet();
+        if (cb.checked) sel.add(tid); else sel.delete(tid);
+        lastThemeSelection = Array.from(sel);
+        updateThemeBankUI();
+        updateExploreVizSelection();
+      };
+
+      listEl.onclick = (e) => {
+        const item = e.target && e.target.closest ? e.target.closest('.theme-bank-item') : null;
+        if (!item) return;
+        const tid = String(item.getAttribute('data-theme-id') || '').trim();
+        const t = themeVizState && themeVizState.candidatesById ? themeVizState.candidatesById.get(tid) : null;
+        pinThemeDetails(t);
+      };
+    }
+
+    function renderThemeExplore(explore, cached) {
+      if (!explore) return;
+      document.getElementById('results-area').style.display = 'none';
+      const area = document.getElementById('theme-area');
+      area.style.display = 'block';
+
+      // Exploration stage: hide expensive downstream views until the user runs scoring.
+      for (const id of ['theme-region-card', 'theme-overview-card', 'theme-score-table-card', 'theme-cards-card']) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      }
+
+      // Reset selection + pinned panel for a new exploration render
+      if (!Array.isArray(lastThemeSelection)) lastThemeSelection = [];
+      pinThemeDetails(null);
+      updateThemeBankUI();
+
+      const counts = explore.counts || {};
+      const summary = document.getElementById('theme-summary');
+      const ts = (explore.text_source || 'all').toLowerCase();
+      const tsLabel = (ts === 'all') ? 'all (q1–q5 combined)' : (ts.toUpperCase() + ' only');
+      const totalAfterMeta = (counts.docs_total_after_meta_filters ?? counts.docs_total_after_filters ?? '?');
+      const totalAfterText = (counts.docs_total_after_text_source ?? counts.docs_total_after_filters ?? '?');
+      summary.innerHTML =
+        '<strong>Theme exploration:</strong> “' + escapeHtml(explore.seed || '') + '”' +
+        (cached ? ' <span style="color:var(--gray-medium);">(cached)</span>' : '') +
+        '<br><strong>Text source:</strong> ' + escapeHtml(tsLabel) +
+        '<br><strong>Docs used:</strong> ' + (counts.docs_used ?? '?') +
+        ' (of ' + totalAfterText + ' after text source; ' + totalAfterMeta + ' after metadata filters)' +
+        ' &nbsp; <strong>Bullets:</strong> ' + (counts.bullets ?? '?') +
+        ' &nbsp; <strong>Clusters:</strong> ' + (counts.clusters_labeled ?? '?') +
+        ' &nbsp; <strong>Theme candidates:</strong> ' + (counts.theme_candidates ?? '?') + '.';
+
+      const points = explore.points || [];
+      const candidates = explore.candidate_themes || [];
+
+      const svg = d3.select('#theme-viz');
+      svg.selectAll('*').remove();
+
+      const { width, height } = _setThemeVizSize(svg);
+      const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+      const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+      const xs = points.map(p => p.x).filter(v => typeof v === 'number' && !Number.isNaN(v));
+      const ys = points.map(p => p.y).filter(v => typeof v === 'number' && !Number.isNaN(v));
+      const xScale = d3.scaleLinear().domain(d3.extent(xs)).range([0, innerW]).nice();
+      const yScale = d3.scaleLinear().domain(d3.extent(ys)).range([innerH, 0]).nice();
+
+      const cidSet = new Set(points.map(p => p.cluster_id));
+      const cidVals = [...cidSet].filter(v => v != null).sort((a,b)=>a-b);
+      const clusterColor = d3.scaleOrdinal()
+        .domain(cidVals.map(String))
+        .range(d3.schemeTableau10.concat(d3.schemeSet3).concat(d3.schemePaired));
+
+      const candidatesById = new Map();
+      for (const t of candidates) {
+        const tid = String(t && t.theme_id ? t.theme_id : '');
+        if (tid) candidatesById.set(tid, t);
+      }
+      const candidatesByCluster = _groupCandidatesByCluster(candidates);
+
+      function currentTitleForPoint(p) {
+        const t = _chosenCandidateForCluster(p.cluster_id);
+        return (t && t.name) ? String(t.name) : `Cluster ${p.cluster_id}`;
+      }
+
+      const dots = g.append('g')
+        .selectAll('circle')
+        .data(points)
+        .join('circle')
+        .attr('cx', p => xScale(p.x))
+        .attr('cy', p => yScale(p.y))
+        .attr('r', 3)
+        .attr('fill', p => {
+          const cid = String(p.cluster_id);
+          return cid === '-1' ? '#8C8C8C' : clusterColor(cid);
+        })
+        .attr('opacity', 0.75)
+        .on('pointerenter', (event, p) => {
+          const md = p.metadata || {};
+          const title = currentTitleForPoint(p);
+          const src = (p.source_text && String(p.source_text).trim())
+            ? String(p.source_text).trim()
+            : ((p.quote && String(p.quote).trim()) ? String(p.quote).trim() : '');
+          const quoteLine = src
+            ? `<div style="margin-top:0.25rem;"><strong>Linked sentences:</strong><div style="margin-top:0.15rem; color: var(--gray-dark);">${escapeHtml(src)}</div></div>`
+            : '';
+          const html =
+            `<div class="tt-title">${escapeHtml(title)}</div>` +
+            quoteLine +
+            `<div style="margin-top:0.25rem;"><strong>Bullet:</strong> ${escapeHtml(p.bullet || '')}</div>` +
+            `<div style="margin-top:0.35rem;color:var(--gray-medium);">` +
+              `region: ${escapeHtml(md.region_of_residence ?? '')} · ` +
+              `income: ${escapeHtml(md.income ?? '')} · ` +
+              `pizza: ${escapeHtml(md.pizza_consumption ?? '')}` +
+            `</div>`;
+          showThemeTooltip(html, event.clientX, event.clientY);
+        })
+        .on('pointermove', (event) => {
+          if (!themeTooltip || themeTooltip.style.display === 'none') return;
+          showThemeTooltip(themeTooltip.innerHTML, event.clientX, event.clientY);
+        })
+        .on('pointerleave', () => hideThemeTooltip());
+
+      // Labels: rendered dynamically so multiple selected themes can appear per cluster.
+      const labelLayer = g.append('g').attr('class', 'cluster-label-layer');
+
+      themeVizState = {
+        mode: 'explore',
+        points,
+        candidates,
+        candidatesById,
+        candidatesByCluster,
+        clusterColor,
+        xScale,
+        yScale,
+        innerW,
+        innerH,
+        dots,
+        labelLayer
+      };
+
+      renderThemeBank(explore);
+      updateThemeBankUI();
+      updateExploreVizSelection();
+      updateThemeDownloadsVisibility();
+    }
+
+    function updateThemeDownloadsVisibility() {
+      const hasStats = !!lastTheme;
+      const msg = document.getElementById('theme-before-stats-msg');
+      const wrap = document.getElementById('theme-downloads-wrap');
+      const section = document.getElementById('theme-stats-section');
+      if (msg) msg.style.display = hasStats ? 'none' : 'block';
+      if (wrap) wrap.style.display = hasStats ? 'flex' : 'none';
+      if (section) section.style.display = hasStats ? 'block' : 'none';
+    }
+
+    function renderTheme(theme, cached) {
+      if (!theme) return;
+      document.getElementById('results-area').style.display = 'none';
+      const area = document.getElementById('theme-area');
+      area.style.display = 'block';
+
+      updateThemeDownloadsVisibility();
+
+      // Scored stage (or legacy runs): show downstream views.
+      for (const id of ['theme-region-card', 'theme-overview-card', 'theme-score-table-card', 'theme-cards-card']) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = '';
+      }
+
+      const counts = theme.counts || {};
+      const summary = document.getElementById('theme-summary');
+      const ts = (theme.text_source || 'all').toLowerCase();
+      const tsLabel = (ts === 'all') ? 'all (q1–q5 combined)' : (ts.toUpperCase() + ' only');
+      const totalAfterMeta = (counts.docs_total_after_meta_filters ?? counts.docs_total_after_filters ?? '?');
+      const totalAfterText = (counts.docs_total_after_text_source ?? counts.docs_total_after_filters ?? '?');
+      summary.innerHTML =
+        '<strong>Theme run:</strong> “' + escapeHtml(theme.seed || '') + '”' +
+        (cached ? ' <span style="color:var(--gray-medium);">(cached)</span>' : '') +
+        '<br><strong>Text source:</strong> ' + escapeHtml(tsLabel) +
+        '<br><strong>Docs used:</strong> ' + (counts.docs_used ?? '?') +
+        ' (of ' + totalAfterText + ' after text source; ' + totalAfterMeta + ' after metadata filters)' +
+        ' &nbsp; <strong>Bullets:</strong> ' + (counts.bullets ?? '?') +
+        ' &nbsp; <strong>Themes labeled:</strong> ' + (counts.clusters_labeled ?? '?') + '.';
+
+      const points = theme.points || [];
+      const themes = theme.themes || [];
+
+      const svg = d3.select('#theme-viz');
+      svg.selectAll('*').remove();
+
+      const { width, height } = _setThemeVizSize(svg);
+      const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+
+      const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+      const xs = points.map(p => p.x).filter(v => typeof v === 'number' && !Number.isNaN(v));
+      const ys = points.map(p => p.y).filter(v => typeof v === 'number' && !Number.isNaN(v));
+      const xScale = d3.scaleLinear().domain(d3.extent(xs)).range([0, innerW]).nice();
+      const yScale = d3.scaleLinear().domain(d3.extent(ys)).range([innerH, 0]).nice();
+
+      const cidSet = new Set(points.map(p => p.cluster_id));
+      const cidVals = [...cidSet].filter(v => v != null).sort((a,b)=>a-b);
+      const clusterColor = d3.scaleOrdinal()
+        .domain(cidVals.map(String))
+        .range(d3.schemeTableau10.concat(d3.schemeSet3).concat(d3.schemePaired));
+
+      const themesByCluster = new Map();
+      themes.forEach(t => {
+        const k = String(t.cluster_id);
+        if (!themesByCluster.has(k)) themesByCluster.set(k, []);
+        themesByCluster.get(k).push(t);
+      });
+
+      const activeClusters = new Set(themes.map(t => String(t.cluster_id)));
+      const nonNoiseClusters = new Set(points.map(p => String(p.cluster_id)).filter(x => x !== '-1'));
+      const hasThemeFilter = activeClusters.size > 0 && activeClusters.size < nonNoiseClusters.size;
+
+      function colorForPoint(p) {
+        const cid = String(p.cluster_id);
+        if (cid === '-1') return '#8C8C8C';
+        if (hasThemeFilter && !activeClusters.has(cid)) return '#8C8C8C';
+        return clusterColor(cid);
+      }
+
+      const dots = g.append('g')
+        .selectAll('circle')
+        .data(points)
+        .join('circle')
+        .attr('cx', p => xScale(p.x))
+        .attr('cy', p => yScale(p.y))
+        .attr('r', 3)
+        .attr('fill', p => colorForPoint(p))
+        .attr('opacity', p => {
+          const cid = String(p.cluster_id);
+          if (cid === '-1') return hasThemeFilter ? 0.18 : 0.35;
+          if (!hasThemeFilter) return 0.75;
+          return activeClusters.has(cid) ? 0.85 : 0.22;
+        })
+        .on('pointerenter', (event, p) => {
+          const ths = themesByCluster.get(String(p.cluster_id)) || [];
+          const md = p.metadata || {};
+          const title = (ths[0] && ths[0].name) ? ths[0].name : `Cluster ${p.cluster_id}`;
+          const src = (p.source_text && String(p.source_text).trim())
+            ? String(p.source_text).trim()
+            : ((p.quote && String(p.quote).trim()) ? String(p.quote).trim() : '');
+          const quoteLine = src
+            ? `<div style="margin-top:0.25rem;"><strong>Linked sentences:</strong><div style="margin-top:0.15rem; color: var(--gray-dark);">${escapeHtml(src)}</div></div>`
+            : '';
+          const html =
+            `<div class="tt-title">${escapeHtml(title)}</div>` +
+            quoteLine +
+            `<div style="margin-top:0.25rem;"><strong>Bullet:</strong> ${escapeHtml(p.bullet || '')}</div>` +
+            `<div style="margin-top:0.35rem;color:var(--gray-medium);">` +
+              `region: ${escapeHtml(md.region_of_residence ?? '')} · ` +
+              `income: ${escapeHtml(md.income ?? '')} · ` +
+              `pizza: ${escapeHtml(md.pizza_consumption ?? '')}` +
+            `</div>`;
+          showThemeTooltip(html, event.clientX, event.clientY);
+        })
+        .on('pointermove', (event) => {
+          if (!themeTooltip || themeTooltip.style.display === 'none') return;
+          showThemeTooltip(themeTooltip.innerHTML, event.clientX, event.clientY);
+        })
+        .on('pointerleave', () => hideThemeTooltip());
+
+      const labelLayer = g.append('g').attr('class', 'scored-cluster-label-layer');
+
+      const themesWithCentroids = themes.map(t => {
+        if (t && t.centroid && t.centroid.x != null && t.centroid.y != null) return t;
+        const c = _clusterCentroidFromPoints(points, t.cluster_id);
+        if (c) {
+          t.centroid = { x: c.x, y: c.y };
+        }
+        return t;
+      }).filter(t => t && t.centroid && t.centroid.x != null && t.centroid.y != null);
+
+      const labelData = _layoutClusterLabels({
+        items: themesWithCentroids,
+        getClusterId: (t) => (t && t.cluster_id != null) ? t.cluster_id : '',
+        getCentroid: (cid, arr) => {
+          const t0 = arr && arr[0] ? arr[0] : null;
+          return (t0 && t0.centroid) ? t0.centroid : _clusterCentroidFromPoints(points, cid);
+        },
+        xScale,
+        yScale,
+        innerW,
+        innerH,
+      });
+
+      labelLayer.selectAll('text')
+        .data(labelData, d => String(d.item && (d.item.theme_id ?? d.item.cluster_id)) + '_' + d._i)
+        .join('text')
+        .attr('x', d => d._x_px)
+        .attr('y', d => d._y_px)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', 12)
+        .attr('font-weight', 700)
+        .attr('fill', '#1E3A5F')
+        .style('cursor', 'pointer')
+        .style('paint-order', 'stroke')
+        .style('stroke', '#FFFFFF')
+        .style('stroke-width', 4)
+        .text(d => d.item && d.item.name ? d.item.name : `Cluster ${d._cluster_id}`)
+        .on('pointerenter', (event, d) => {
+          const t = d.item;
+          if (!t) return;
+          const bullets = (t.representative_bullets || []).map(b => `<li>${escapeHtml(b)}</li>`).join('');
+          const quotes = (t.representative_quotes || []).map(q => `<li>"${escapeHtml(q)}"</li>`).join('');
+          const html =
+            `<div class="tt-title">${escapeHtml(t.name || '')}</div>` +
+            (t.prompt ? `<div><strong>Criteria:</strong> ${escapeHtml(t.prompt)}</div>` : '') +
+            (bullets ? `<div style="margin-top:0.35rem;"><strong>Representative bullets:</strong><ul>${bullets}</ul></div>` : '') +
+            (quotes ? `<div style="margin-top:0.35rem;"><strong>Representative quotes:</strong><ul>${quotes}</ul></div>` : '');
+          showThemeTooltip(html, event.clientX, event.clientY);
+        })
+        .on('pointermove', (event) => {
+          if (!themeTooltip || themeTooltip.style.display === 'none') return;
+          showThemeTooltip(themeTooltip.innerHTML, event.clientX, event.clientY);
+        })
+        .on('pointerleave', () => hideThemeTooltip())
+        .on('click', (event, d) => {
+          pinThemeDetails(d.item);
+        });
+
+      // No dot filters: render colors once and render region explorer once.
+      dots.attr('fill', p => colorForPoint(p)).attr('display', null);
+      updateRegionExplorer();
+
+      // New: overview + table + cards (from graded scoring rows)
+      renderConceptOverview(theme);
+      renderScoreTable(theme);
+      renderThemeCards(theme);
+    }
+
+    function downloadBlob(filename, text, mime) {
+      const blob = new Blob([text], { type: mime || 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function toCsv(rows, columns) {
+      const esc = (v) => {
+        const s = (v == null) ? '' : String(v);
+        const needs = /[",\n]/.test(s);
+        const out = s.replace(/"/g, '""');
+        return needs ? `"${out}"` : out;
+      };
+      const header = columns.join(',');
+      const lines = (rows || []).map(r => columns.map(c => esc(r[c])).join(','));
+      return [header, ...lines].join('\n');
+    }
+
+    function getLocalRuns() {
+      try {
+        const raw = localStorage.getItem(THEME_LOCAL_KEY);
+        if (!raw) return [];
+        const j = JSON.parse(raw);
+        return Array.isArray(j) ? j : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function setLocalRuns(runs) {
+      localStorage.setItem(THEME_LOCAL_KEY, JSON.stringify(runs));
+    }
+
+    function refreshLocalRunList() {
+      const sel = document.getElementById('theme-load-local');
+      const runs = getLocalRuns();
+      sel.innerHTML = runs.map((r, i) => `<option value="${i}">${escapeHtml(r.name || ('run_' + i))}</option>`).join('');
+    }
+
+    async function refreshServerRunList() {
+      const sel = document.getElementById('theme-load-server');
+      sel.innerHTML = '<option>Loading…</option>';
+      try {
+        const r = await fetch(API + '/api/theme/runs');
+        const j = await r.json();
+        const runs = j.runs || [];
+        sel.innerHTML = runs.map(rr => `<option value="${escapeHtml(rr.run_id)}">${escapeHtml(rr.name || rr.run_id)} — ${escapeHtml(rr.seed || '')}</option>`).join('');
+      } catch {
+        sel.innerHTML = '<option value="">(failed to load)</option>';
+      }
+    }
+
+    document.getElementById('theme-bank-clear').addEventListener('click', () => {
+      lastThemeSelection = [];
+      const listEl = document.getElementById('theme-bank-list');
+      if (listEl) {
+        listEl.querySelectorAll('input[type="checkbox"][data-theme-id]').forEach(cb => { cb.checked = false; });
+      }
+      updateThemeBankUI();
+      updateExploreVizSelection();
+      pinThemeDetails(null);
+    });
+    document.getElementById('theme-bank-score').addEventListener('click', () => runThemeScore());
+    document.getElementById('theme-save-local').addEventListener('click', () => {
+      if (!lastThemeExplore && !lastTheme) return;
+      const defaultSeed = (lastThemeExplore && lastThemeExplore.seed) ? lastThemeExplore.seed : (lastTheme && lastTheme.seed ? lastTheme.seed : 'theme run');
+      const name = prompt('Name this theme run:', defaultSeed || 'theme run');
+      if (!name) return;
+      const combined = {
+        version: 'theme_run_v2',
+        run_id: (lastTheme && lastTheme.run_id) ? lastTheme.run_id : ((lastThemeExplore && lastThemeExplore.explore_id) ? lastThemeExplore.explore_id : ('theme_' + Date.now())),
+        seed: defaultSeed || '',
+        metadata_filters: (lastThemeExplore && lastThemeExplore.metadata_filters) ? lastThemeExplore.metadata_filters : (lastTheme ? lastTheme.metadata_filters : null),
+        text_source: (lastThemeExplore && lastThemeExplore.text_source) ? lastThemeExplore.text_source : (lastTheme ? lastTheme.text_source : 'all'),
+        explore: lastThemeExplore,
+        selection: { theme_ids: Array.isArray(lastThemeSelection) ? lastThemeSelection : [] },
+        scored: lastTheme,
+      };
+      const runs = getLocalRuns();
+      runs.unshift({ name, savedAt: new Date().toISOString(), payload: combined, request: lastThemeRequest });
+      setLocalRuns(runs.slice(0, 50));
+      refreshLocalRunList();
+      showMsg('Saved locally.', '');
+    });
+    document.getElementById('theme-save-server').addEventListener('click', async () => {
+      if (!lastThemeExplore && !lastTheme) return;
+      const defaultSeed = (lastThemeExplore && lastThemeExplore.seed) ? lastThemeExplore.seed : (lastTheme && lastTheme.seed ? lastTheme.seed : 'theme run');
+      const name = prompt('Name this theme run (server):', defaultSeed || 'theme run');
+      if (!name) return;
+      try {
+        const combined = {
+          version: 'theme_run_v2',
+          run_id: (lastTheme && lastTheme.run_id) ? lastTheme.run_id : ((lastThemeExplore && lastThemeExplore.explore_id) ? lastThemeExplore.explore_id : ('theme_' + Date.now())),
+          seed: defaultSeed || '',
+          metadata_filters: (lastThemeExplore && lastThemeExplore.metadata_filters) ? lastThemeExplore.metadata_filters : (lastTheme ? lastTheme.metadata_filters : null),
+          text_source: (lastThemeExplore && lastThemeExplore.text_source) ? lastThemeExplore.text_source : (lastTheme ? lastTheme.text_source : 'all'),
+          explore: lastThemeExplore,
+          selection: { theme_ids: Array.isArray(lastThemeSelection) ? lastThemeSelection : [] },
+          scored: lastTheme,
+        };
+        const r = await fetch(API + '/api/theme/runs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, payload: combined })
+        });
+        if (!r.ok) throw new Error(await r.text());
+        await refreshServerRunList();
+        showMsg('Saved on server.', '');
+      } catch (e) {
+        showMsg('Save failed: ' + (e.message || String(e)), 'error');
+      }
+    });
+    document.getElementById('theme-load-local-btn').addEventListener('click', () => {
+      const sel = document.getElementById('theme-load-local');
+      const idx = parseInt(sel.value, 10);
+      const runs = getLocalRuns();
+      const r = runs[idx];
+      if (!r || !r.payload) return;
+      const payload = r.payload;
+      lastThemeRequest = r.request || null;
+      if (payload && (payload.explore || payload.scored || payload.version === 'theme_run_v2')) {
+        lastThemeExplore = payload.explore || null;
+        lastThemeSelection = (payload.selection && Array.isArray(payload.selection.theme_ids)) ? payload.selection.theme_ids : [];
+        lastTheme = payload.scored || null;
+        if (lastThemeExplore) {
+          renderThemeExplore(lastThemeExplore, true);
+        }
+        if (lastTheme) {
+          renderTheme(lastTheme, true);
+        } else {
+          updateThemeBankUI();
+          updateExploreVizSelection();
+        }
+      } else {
+        // Legacy: payload is the scored theme run
+        lastThemeExplore = null;
+        lastThemeSelection = [];
+        lastTheme = payload;
+        renderTheme(lastTheme, true);
+      }
+      showMsg('');
+    });
+    document.getElementById('theme-refresh-server').addEventListener('click', refreshServerRunList);
+    document.getElementById('theme-load-server-btn').addEventListener('click', async () => {
+      const runId = document.getElementById('theme-load-server').value;
+      if (!runId) return;
+      try {
+        const r = await fetch(API + '/api/theme/runs/' + encodeURIComponent(runId));
+        if (!r.ok) throw new Error(await r.text());
+        const j = await r.json();
+        const payload = j.payload || j.theme || j;
+        lastThemeRequest = null;
+        if (payload && (payload.explore || payload.scored || payload.version === 'theme_run_v2')) {
+          lastThemeExplore = payload.explore || null;
+          lastThemeSelection = (payload.selection && Array.isArray(payload.selection.theme_ids)) ? payload.selection.theme_ids : [];
+          lastTheme = payload.scored || null;
+          if (lastThemeExplore) {
+            renderThemeExplore(lastThemeExplore, true);
+          }
+          if (lastTheme) {
+            renderTheme(lastTheme, true);
+          } else {
+            updateThemeBankUI();
+            updateExploreVizSelection();
+          }
+        } else {
+          // Legacy: payload is the scored theme run
+          lastThemeExplore = null;
+          lastThemeSelection = [];
+          lastTheme = payload;
+          renderTheme(lastTheme, true);
+        }
+        showMsg('');
+      } catch (e) {
+        showMsg('Load failed: ' + (e.message || String(e)), 'error');
+      }
+    });
+
+    document.getElementById('theme-download-json').addEventListener('click', () => {
+      if (!lastTheme) return;
+      downloadBlob('theme_run_' + (lastTheme.seed || 'seed').replace(/\s+/g,'_') + '.json', JSON.stringify(lastTheme, null, 2), 'application/json');
+    });
+    document.getElementById('theme-download-points-csv').addEventListener('click', () => {
+      if (!lastTheme) return;
+      const rows = (lastTheme.points || []).map(p => ({
+        bullet_id: p.bullet_id,
+        doc_id: p.doc_id,
+        bullet: p.bullet,
+        source_text: p.source_text || p.quote || '',
+        start_sentence_idx: p.start_sentence_idx,
+        end_sentence_idx: p.end_sentence_idx,
+        sentence_count: p.sentence_count,
+        cluster_id: p.cluster_id,
+        x: p.x,
+        y: p.y,
+        region_of_residence: (p.metadata || {}).region_of_residence,
+        income: (p.metadata || {}).income,
+        pizza_consumption: (p.metadata || {}).pizza_consumption
+      }));
+      const csv = toCsv(
+        rows,
+        [
+          'bullet_id','doc_id','bullet','source_text','start_sentence_idx','end_sentence_idx','sentence_count',
+          'cluster_id','x','y','region_of_residence','income','pizza_consumption'
+        ]
+      );
+      downloadBlob('theme_points_' + (lastTheme.seed || 'seed').replace(/\s+/g,'_') + '.csv', csv, 'text/csv');
+    });
+    document.getElementById('theme-download-themes-csv').addEventListener('click', () => {
+      if (!lastTheme) return;
+      const rows = (lastTheme.themes || []).map(t => ({
+        cluster_id: t.cluster_id,
+        name: t.name,
+        prompt: t.prompt,
+        n_points: t.n_points,
+        representative_bullets: (t.representative_bullets || []).join(' | '),
+        representative_quotes: (t.representative_quotes || []).join(' | ')
+      }));
+      const csv = toCsv(rows, ['cluster_id','name','prompt','n_points','representative_bullets','representative_quotes']);
+      downloadBlob('theme_themes_' + (lastTheme.seed || 'seed').replace(/\s+/g,'_') + '.csv', csv, 'text/csv');
+    });
+
+    document.getElementById('theme-download-theme-scores-csv').addEventListener('click', () => {
+      if (!lastTheme) return;
+      const seed = lastTheme.seed || '';
+
+      const scoreRows = (lastTheme.scores && Array.isArray(lastTheme.scores.bullet_theme_scores))
+        ? lastTheme.scores.bullet_theme_scores
+        : [];
+      const rowsRaw = scoreRows.length ? scoreRows : [];
+
+      // Attach doc-level metadata (from points) so the CSV matches the on-page table.
+      const points = (lastTheme.points || []);
+      const metaByBulletId = new Map();
+      for (const p of points) {
+        if (!p || !p.bullet_id) continue;
+        metaByBulletId.set(String(p.bullet_id), p.metadata || {});
+      }
+      const META_COLS = ['participant_id', 'region_of_residence', 'pizza_consumption', 'income', 'age', 'food_restrictions'];
+      const rows = rowsRaw.map(r => {
+        const md = metaByBulletId.get(String(r.bullet_id || '')) || {};
+        const out = { ...r };
+        for (const k of META_COLS) {
+          if (md[k] == null || md[k] === '') {
+            out[k] = '';
+          } else {
+            const b = bucketMetaValue(k, md[k]);
+            out[k] = (b === 'Other') ? String(md[k]) : b;
+          }
+        }
+        return out;
+      });
+
+      const csv = toCsv(
+        rows,
+        [
+          'doc_id','text','bullet_id','bullet',
+          'concept_id','concept_name','concept_prompt',
+          'score','rationale','highlight','concept_seed',
+          'participant_id','region_of_residence','pizza_consumption','income','age','food_restrictions'
+        ]
+      );
+      downloadBlob('theme_scores_' + (seed || 'seed').replace(/\s+/g,'_') + '.csv', csv, 'text/csv');
+    });
+
+    document.getElementById('theme-mode').addEventListener('change', () => {
+      const on = isThemeMode();
+      document.getElementById('theme-controls').style.display = on ? 'block' : 'none';
+      const sc = document.getElementById('search-controls');
+      if (sc) sc.style.display = on ? 'none' : 'block';
+
+      const filtersSection = document.getElementById('metadata-filters-section');
+      const anchor = document.getElementById(on ? 'metadata-filters-anchor-theme' : 'metadata-filters-anchor-search');
+      if (filtersSection && anchor) anchor.appendChild(filtersSection);
+
+      const updateBtn = document.getElementById('update-search');
+      if (updateBtn) updateBtn.textContent = on ? 'Run Theme' : 'Update Search';
+
+      document.getElementById('threshold-wrap').style.display = on ? 'none' : (document.getElementById('search-type').value === 'fulltext' ? 'none' : 'block');
+      document.getElementById('search-type').disabled = on;
+      if (!on) {
+        document.getElementById('theme-area').style.display = 'none';
+      }
+      refreshLocalRunList();
+      refreshServerRunList();
+    });
+    document.getElementById('theme-mode').dispatchEvent(new Event('change'));
+    refreshLocalRunList();
+
 
     document.getElementById('download-json').addEventListener('click', () => {
       if (!lastPayload || !lastPayload.data) return;

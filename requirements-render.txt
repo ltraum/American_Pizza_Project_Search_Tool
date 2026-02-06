@@ -31,3 +31,7 @@ uvicorn[standard]>=0.24.0
 
 # Query expansion with AI
 openai>=1.0.0  # For AI-based query expansion
+
+# Theme mode clustering (LLooM-style)
+umap-learn>=0.5.5
+hdbscan>=0.8.33

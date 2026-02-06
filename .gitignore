@@ -14,6 +14,9 @@ search_index/
 vector_db/
 embeddings_cache/
 
+# Theme mode saved runs
+theme_runs/
+
 # Environment variables
 .env
 
@@ -33,3 +36,12 @@ Thumbs.db
 
 # Logs
 *.log
+
+lloom_source_material/
+
+venv/
+.env
+__pycache__/
+*.pyc
+
+
